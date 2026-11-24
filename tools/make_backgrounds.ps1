@@ -1,7 +1,7 @@
 # make_backgrounds.ps1 - turn source photos into Offshore backgrounds: 1920x1080 crop, readability shading baked in, compressed JPEG.
 # The shading used to be a live full-screen CSS layer; baking it into the photos removed every missed frame on the Cube.
 #   powershell -ExecutionPolicy Bypass -File ".\tools\make_backgrounds.ps1" [-Source ".\launcher\backgrounds\ocean"] [-Quality 82]
-# Every .jpg/.png in -Source becomes launcher\web\img\<same name>.jpg. The page cycles through the files listed in index.html.
+# Every .jpg/.png in -Source becomes launcher\web\img\<same name>.jpg. The page cycles through the files listed in launcher\web\src\js\05-photos.js.
 # 1920x1080 is exact: Fire TVs draw apps at 1920x1080 even on 4K TVs (the TV/HDMI upscales the whole UI).
 # Quality 82: lower values band visibly in sunset skies.
 param(

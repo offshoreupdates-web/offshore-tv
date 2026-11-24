@@ -18,7 +18,7 @@
     rows.forEach(function (r) {
       var cell = document.createElement("div"), k = document.createElement("div"), v = document.createElement("div");
       k.className = "k"; k.textContent = r[0]; v.className = "v"; v.textContent = r[1] || "—";
-      if (r[0] === "Sound") cell.className = "wide";       // formats need the full width
+      if (r[0] === "Sound" || r[0] === "Home screen") cell.className = "wide";   // formats and the warning need the width
       var adb = r[0] === "Home screen" ? adbState() : null;   // left on after setup? say so (Settings > Security & privacy)
       if (adb && adb.on) { var w = document.createElement("span"); w.className = "warn"; w.textContent = " · Developer access on"; v.appendChild(w); }
       cell.appendChild(k); cell.appendChild(v); grid.appendChild(cell);
@@ -29,6 +29,7 @@
     renderSysButtons();
     document.getElementById("sys").classList.add("open");
     document.getElementById("sysdim").classList.add("open");
+    document.body.classList.add("sys-open");
   }
 
   // Clear and Pause buttons at the top of the panel (◀ ▶ to choose, OK to use).

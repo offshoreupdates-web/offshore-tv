@@ -35,7 +35,7 @@
     net: "Wi-Fi, your network folder (NAS), and where downloads and received files are kept.",
     tv: "This TV's name, location, language, time zone, clock format and temperature units.",
     fire: "Amazon's own Fire TV settings and home screen, for anything Offshore doesn't cover. Home brings you back.",
-    share: "Bluetooth devices, receiving from phones, and screen mirroring.",
+    "g:share": "Bluetooth devices, receiving from phones, and screen mirroring.",
     storage: "Where downloads and received files go, and the space they use.",
     sec: "A PIN for these settings, and developer access.",
     alertsOn: "Severe weather from the National Weather Service, plus the AMBER Alerts and emergencies local officials send through it. The most serious show over any app. Keep your phone's alerts on too.",

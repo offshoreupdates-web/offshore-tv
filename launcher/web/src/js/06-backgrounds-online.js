@@ -205,7 +205,6 @@
     return Promise.all(list.map(function (x) { return x.check ? wideEnough(x.check) : Promise.resolve(true); }))
       .then(function (ok) { return list.filter(function (x, i) { return ok[i]; }).map(function (x) { return x.p; }).slice(0, want); });
   }
-  function getJson(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
   var https = function (u) { return String(u || "").replace(/^http:\/\//, "https://"); };
   function nasaPhotos(q, want) {
     return getJson("https://images-api.nasa.gov/search?media_type=image&page_size=60&q=" + encodeURIComponent(q)).then(function (j) {

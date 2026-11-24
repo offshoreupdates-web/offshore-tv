@@ -139,7 +139,9 @@
   .ss-mirror.ambient #beach { opacity: 0; visibility: hidden; }
   /* Editing the layout: the screensaver shows behind a narrower, see-through Settings panel. */
   .laying #cust { width: 640px; background: rgba(20,24,30,.55); }
+  .laying.cust-right #cust.open { transform: translateX(1152px); }
   .laying .sysdim { opacity: 0 !important; }
+  .laying .ssalert, .laying .ssalert.on { opacity: 0; visibility: hidden; }   /* a warning can't be placed, and would cover the list */
   .mtime { font-size: 230px; font-weight: 200; letter-spacing: -8px; line-height: .86; }
   .mdate { font-size: 46px; font-weight: 300; color: var(--text-2); margin-top: 26px; }
   .mwx { display: flex; align-items: center; gap: 16px; font-size: 42px; font-weight: 300; margin-top: 12px; }

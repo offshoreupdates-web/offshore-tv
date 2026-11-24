@@ -1,6 +1,7 @@
 # Built apps and the generated page
 apks/
 launcher/web/index.html
+launcher/web/app.js
 
 # Signing keys: never commit these
 *.keystore

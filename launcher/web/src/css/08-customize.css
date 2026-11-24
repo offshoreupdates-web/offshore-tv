@@ -10,15 +10,44 @@
   .crow.focus .val { color: #333; }
   .hide-beach #beach { display: none !important; }
 
-  /* Appearance and Home screen: the panel steps to the right and the dimming goes, so the home shows each change as
-     it's made (js/23-customize.js, custLive). Slid with transform, so it animates like opening. */
-  .cust-live #cust.open { width: 720px; transform: translate(176px, -50%); }
-  body.cust-live:not(.light) #cust { background: rgba(20,24,30,.62); }
-  body.cust-live.light #cust { background: rgba(250,250,252,.78); }
-  .cust-live .sysdim { opacity: 0 !important; }
-  .cust-live #cust .foot .fh { height: 90px; }
-  .cust-live #cust h2 { font-size: 36px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Settings sits in one fixed frame docked at the left: the same place and size on every page, so moving between
+     pages never moves the panel. The home stays in view on the right, undimmed, so every change shows as it's made.
+     For the settings that arrange the left side of the home (the beach row, the app name, the help line) the frame
+     slides to the right so that side is in view (js/23-customize.js, custLive). */
+  /* Notifications & System, the way in, uses the same frame, so going to Settings swaps the page in place. */
+  #cust, #sys { left: 64px; top: 64px; bottom: 64px; width: 800px; display: flex; flex-direction: column; padding: 40px 44px 28px;
+    transform: translateX(-32px); transition: opacity .25s var(--ease), transform .35s var(--ease), visibility 0s linear .35s; }
+  #cust.open, #sys.open { transform: none; }
+  #sys h2 { font-size: 40px; flex: none; }
+  #sys .grid { flex: 1 1 auto; min-height: 0; overflow: hidden; align-content: start; gap: 12px 36px; }
+  #sys .acts { gap: 14px; margin-top: 22px; }
+  #sys .acts + .acts { margin-top: 14px; }
+  #sys .sbtn { flex: 1 1 auto; min-width: 0; height: 70px; padding: 0 18px; gap: 10px; font-size: 24px; }
+  #sys .sbtn svg { width: 28px; height: 28px; }
+  #sys .sbtn small { font-size: 19px; overflow: hidden; text-overflow: ellipsis; }
+  #sys .grid { margin-top: 20px; padding-top: 18px; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+  #sys .k { font-size: 16px; }
+  #sys .v { font-size: 27px; margin-top: 2px; }
+  #sys .foot { flex: none; margin-top: 14px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.12); }
+  .light #sys .foot { border-top-color: rgba(0,0,0,.1); }
+  .cust-right #cust.open { transform: translateX(992px); }
+  body:not(.light) #cust { background: rgba(20,24,30,.74); }
+  body.light #cust { background: rgba(250,250,252,.84); }
+  /* On a video background the blur is off (smooth playback), so the frame is nearly solid instead. */
+  body.live-bg:not(.light) #cust, body.live-bg:not(.light) #sys { background: linear-gradient(180deg, rgba(36,40,48,.95), rgba(18,20,26,.94)); }
+  body.live-bg.light #cust, body.live-bg.light #sys { background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(242,244,248,.95)); }
+  #cust h2 { flex: none; font-size: 40px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #cust .crows { flex: 1 1 auto; min-height: 0; overflow: hidden; margin-top: 22px; }
+  #cust .foot { flex: none; margin-top: 14px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.12); }
+  .light #cust .foot { border-top-color: rgba(0,0,0,.1); }
+  #cust .foot .fh { height: 90px; }
+  /* More below or above: only the edge row fades, so it reads as "more" without smearing. */
+  #cust .crows.fade-bot { -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 56px), transparent); mask-image: linear-gradient(180deg, #000 calc(100% - 56px), transparent); }
+  #cust .crows.fade-top { -webkit-mask-image: linear-gradient(0deg, #000 calc(100% - 56px), transparent); mask-image: linear-gradient(0deg, #000 calc(100% - 56px), transparent); }
+  #cust .crows.fade-top.fade-bot { -webkit-mask-image: linear-gradient(180deg, transparent, #000 56px, #000 calc(100% - 56px), transparent); mask-image: linear-gradient(180deg, transparent, #000 56px, #000 calc(100% - 56px), transparent); }
+  #cust .kbgrid { grid-template-columns: repeat(10, 62px); gap: 8px; justify-content: center; }
+  #cust .kbgrid .zipkey { height: 58px; font-size: 26px; }
+  #cust .kbdisp { font-size: 40px; }
   /* In Appearance the big name over the tiles would still name the status box: it steps aside (Home screen keeps it,
      since its settings arrange it). */
-  .cust-look .hero { opacity: 0; transition: opacity .3s var(--ease); }
-  .cust-live.cust-left #cust.open { transform: translate(-896px, -50%); }
+  .cust-look .hero, .cust-open:not(.cust-right) .hero, .sys-open .hero { opacity: 0; transition: opacity .3s var(--ease); }

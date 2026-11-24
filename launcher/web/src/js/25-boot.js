@@ -58,5 +58,3 @@
     boot({ apps: demo });
   } else boot(DEFAULT_TV);
 })();
-</script>
-</body>

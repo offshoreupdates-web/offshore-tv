@@ -42,7 +42,7 @@ $got = ((& $java -jar $signer verify --print-certs "$apk" | Select-String "SHA-2
 if (-not $want -or $want -ne $got) { throw "The APK isn't signed with the release key (got $got)" }
 
 # Notes: this version's entry in the app's own changelog.
-$page = [IO.File]::ReadAllText((Join-Path $root "launcher/web/index.html"))
+$page = [IO.File]::ReadAllText((Join-Path $root "launcher/web/app.js"))
 $m = [regex]::Match($page, '\["' + [regex]::Escape($Version) + '", "[^"]*", (\[.*?\])\]\]?,?\r?\n', 'Singleline')
 [string[]]$notes = if ($m.Success) { $m.Groups[1].Value | ConvertFrom-Json } else { @() }
 if (-not $notes.Count) { Write-Warning "No CHANGELOG entry for ${Version}: latest.json has no notes" }

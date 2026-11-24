@@ -224,6 +224,9 @@ final class Home {
             parent.addView(tex, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));   // behind the page
         }
         web.setBackgroundColor(0x00000000);
+        // Every video frame redraws the window. Without a layer the page's compositor ran again for each one (about
+        // half a CPU core on a Cube); in its own GPU layer the unchanged page is reused and only blended over the frame.
+        web.setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null);
         if (tex.isAvailable()) startPlayer(url);                          // otherwise when its surface is ready
     }
 
@@ -292,6 +295,7 @@ final class Home {
         releasePlayer();
         if (tex != null && tex.getParent() != null) ((ViewGroup) tex.getParent()).removeView(tex);
         tex = null;
+        web.setLayerType(android.view.View.LAYER_TYPE_NONE, null);
         web.setBackgroundColor(0xFF000000);
     }
 

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Lockdown: no inline event handlers, plugins, frames, forms or <base> tricks, so text that ever slipped into markup can't run. -->
-<meta http-equiv="Content-Security-Policy" content="script-src 'unsafe-inline'; script-src-attr 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self'; script-src-attr 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Offshore</title>
 <style>
 @@CSS@@
@@ -148,6 +148,6 @@
   <div class="toast glass" id="toast"></div>
 </div>
 
-<script>
-@@JS@@
+<script src="app.js"></script>
+</body>
 </html>

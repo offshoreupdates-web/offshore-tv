@@ -36,8 +36,16 @@
       var g = GROUPS.filter(function (x) { return "g:" + x.id === custMode; })[0];
       return g.keys.map(function (k) { return k.indexOf("g:") === 0 ? folderRow(k) : rowOf(k); });
     }
-    return GROUPS.filter(function (g) { return !g.parent; }).map(function (g) { return { key: "g:" + g.id, label: g.label, group: g }; }).concat([rowOf("save")]);
+    // The first list: folders in five plain sections, so there's less to take in at once.
+    var out = [];
+    SECTIONS.forEach(function (sec) {
+      out.push({ head: true, label: sec[0] });
+      sec[1].forEach(function (id) { var g = GROUPS.filter(function (x) { return x.id === id; })[0]; if (g) out.push({ key: "g:" + g.id, label: g.label, group: g }); });
+    });
+    return out.concat([rowOf("save")]);
   }
+  var SECTIONS = [["Look", ["look", "info", "saver"]], ["Watch & listen", ["livetv", "media", "sport"]], ["Your day", ["cal", "notif"]],
+                  ["Devices", ["share", "net", "tv", "fire", "tasks"]], ["Privacy & updates", ["sec", "upd"]]];
   function folderRow(k) { var g = GROUPS.filter(function (x) { return "g:" + x.id === k; })[0]; return { key: k, label: g.label, group: g }; }
   function groupValue(g) {                                 // a hint of what's inside each folder
     if (g.id === "look") return bgName(PREFS.bg);
@@ -807,7 +815,9 @@
       return rows.length ? rows : [{ label: "Turn on a league first", act: true, none: true }];
     }
     return viewRows().map(function (r) {
-      if (r.group) return { label: T(r.label), value: groupValue(r.group) + "  ›", link: true, icon: r.group.id, help: r.group.id };
+      if (r.head) return { label: T(r.label), value: "", act: true, none: true, head: true };
+      if (r.group) return { label: T(r.label), value: groupValue(r.group) + "  ›", link: true, icon: r.group.id,
+                            help: HELP["g:" + r.group.id] ? "g:" + r.group.id : r.group.id };   // "g:share": the setting has the id too
       if (r.live) return { label: T(r.label), value: liveValue(r.key), act: !r.adj, adj: !!r.adj, help: r.key, icon: r.icon };
       return { label: T(r.label), act: !!r.action, value: r.action ? "" : r.link ? linkValue(r.key) + "  ›" : r.opts[prefValue(r)][1], link: !!r.link,
                save: r.key === "save", help: r.key };
@@ -820,7 +830,7 @@
     taskWatch();
     if (/^bg(photos|live|clips|pics)?$/.test(custMode) && !previewing) { previewing = true; document.body.classList.add("previewing"); previewBg(custRows()[custRow]); }
     else if (!/^bg(photos|live|clips|pics)?$/.test(custMode)) endPreview();
-    var rows = custRows(), box = document.getElementById("crows"), VIS = custMode === "main" ? 10 : 8;   // main: all folders + Save
+    var rows = custRows(), box = document.getElementById("crows"), VIS = custMode === "main" ? 13 : 8;   // main: folders, section names and Save
     if (rows[custRow] && rows[custRow].none) {                // headings and notes are never focused
       var nx = rows.map(function (r) { return !r.none; }).indexOf(true, custRow);
       if (nx < 0) nx = rows.map(function (r) { return !r.none; }).lastIndexOf(true);
@@ -879,7 +889,18 @@
       box.appendChild(kg);
       return;
     }
+    // As many rows as the frame holds (it's the same height on every page): drawn, then one fewer while they overflow.
     // More above or below: the list fades out at that edge (no "more" rows taking space).
+    for (; VIS > 3; VIS--) {
+      start = Math.max(0, Math.min(custRow - Math.min(3, VIS - 2), rows.length - VIS));
+      drawRows(start, VIS);
+      if (box.scrollHeight <= box.clientHeight + 2) break;
+    }
+    if (VIS <= 3) drawRows(start, VIS);
+  }
+  function drawRows(start, VIS) {
+    var rows = custRows(), box = document.getElementById("crows");
+    box.innerHTML = "";
     box.classList.toggle("fade-top", start > 0);
     box.classList.toggle("fade-bot", start + VIS < rows.length);
     rows.slice(start, start + VIS).forEach(function (r, k) {
@@ -897,14 +918,20 @@
       row.appendChild(l); row.appendChild(v); box.appendChild(row);
     });
   }
-  // Appearance and Home screen change the home as you go (applyPrefs), so there the panel steps to the right and the
-  // dimming goes: the home stays in view beside the list. On the weather row, a shower of rain shows what Weather on the background looks like on a dry day.
+  // Settings change the home as you go (applyPrefs), and the home stays in view beside the docked frame. In Appearance,
+  // Home screen and Keep watching an app tile also shows the highlight, and on the weather row a shower of rain shows
+  // what Weather on the background looks like on a dry day.
   function custLive(cur) {
     var live = custOpen && (custMode === "g:look" || custMode === "g:info" || custMode === "g:kw");
     document.body.classList.toggle("cust-live", live);
     document.body.classList.toggle("cust-look", live && custMode === "g:look");
-    // The clock and forecast sit top right: on their rows the panel crosses to the left so they're in view.
-    document.body.classList.toggle("cust-left", live && !!cur && /^(homeClock|homeWeek|homeAir)/.test(cur.help || ""));
+    // The frame is docked left; for the settings that arrange the left side of the home it slides right.
+    // Editing the screensaver layout, it sits on the right unless the item in focus is placed on the right.
+    var laying = document.body.classList.contains("laying");
+    document.body.classList.toggle("cust-right", custOpen && !!cur && (laying ? !/right/i.test(cur.value || "")
+      : /^(beach|homeInfo|homeHero|homeHint)/.test(cur.help || "")));
+    document.body.classList.toggle("cust-open", custOpen);
+    if (custOpen) document.getElementById("sysdim").classList.remove("open");   // never dimmed: the home is the preview
     // An app tile shows the highlight while you're here, so Highlight, Highlight motion, App tile corners and glass
     // changes can be seen on one (the home's own focus may be on the status box).
     var lit = document.querySelector(".tile.live-pick");
@@ -931,7 +958,6 @@
     if (!skipPin && (load("prefs") || {}).custPin) { custMode = "pinask"; padIdx = 0; padZip = ""; }   // Security & privacy > Settings PIN
     renderCustom();
     document.getElementById("cust").classList.add("open");
-    document.getElementById("sysdim").classList.add("open");
   }
   function closeCustom() {
     custOpen = false;
@@ -1411,5 +1437,6 @@
     sysOpen = false;
     document.getElementById("sys").classList.remove("open");
     document.getElementById("sysdim").classList.remove("open");
+    document.body.classList.remove("sys-open");
   }
 
