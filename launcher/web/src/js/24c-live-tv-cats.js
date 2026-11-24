@@ -1,5 +1,4 @@
-  // ---- Live TV categories, like cable (owner: "it automatically organizes the channels in their categories ... news,
-  // cartoons, movies, sports"). Every channel lands in one category, decided by the strongest signal it has:
+  // ---- Live TV categories, like cable. Every channel lands in one category, decided by the strongest signal it has:
   //   1. Local: a TV station near this TV (FCC list, see ltLocalMatch). Only that: a playlist's "Locals" group is often
   //      stations from other cities ("New York 1 News" isn't local in Pennsylvania).
   //   2. the channel itself: well-known channel names (ESPN, HBO, Nickelodeon, HGTV, Univision ...)
@@ -7,7 +6,7 @@
   //   4. the guide: the category most of its upcoming shows have ("Sports event", "Movie", "Children" ...)
   //   5. words in its name ("... News", "... Movies")
   // and gets a cable-style number: Local from 2, then a block per category (News 100s, Sports 200s ...; blocks of 1,000
-  // when a category has more than 98 channels). Only names are matched: nothing is added to the owner's playlist.
+  // when a category has more than 98 channels). Only names are matched: nothing is added to the user's playlist.
   var LT_CATS = [
     { id: "local", name: "Local", icon: "⌂" }, { id: "news", name: "News", icon: "◉" }, { id: "sports", name: "Sports", icon: "◆" },
     { id: "ent", name: "Entertainment", icon: "✦" }, { id: "movies", name: "Movies", icon: "▶" }, { id: "kids", name: "Cartoons & Kids", icon: "☺" },

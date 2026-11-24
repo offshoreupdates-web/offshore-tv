@@ -1,5 +1,5 @@
   // ---- Network folder (Settings > Backgrounds > Network folder) ----------------------------------------------
-  // Photos from the owner's NAS over SMB or NFS (the app does the network part, see Nas.java). The NAS decides access:
+  // Photos from the user's NAS over SMB or NFS (the app does the network part, see Nas.java). The NAS decides access:
   // an SMB user that can read the folder, or the TV's address allowed on the NFS export. Only the photo on screen and
   // the next are kept on the TV. "Keep downloads on the NAS" puts downloaded categories there too (Offshore/<category>).
   var NASF = null, NASLIST = [], nasSeq = 0, pendingNas = {}, nasState = "";   // NASF: the settings being edited

@@ -103,7 +103,7 @@
   // sort. OK opens a folder or shows a photo; Back goes up a folder, then closes. Names come from the disk: never markup.
   // The app only answers for paths inside the places (Files.java). Reading the TV's folders and USB drives needs
   // Android's storage permission, asked once with its own prompt; files from phones are always readable.
-  // Managing (phase 2): ▶ or holding OK on a file or folder opens its options (Open, Rename, Copy, Move, Delete).
+  // Managing: ▶ or holding OK on a file or folder opens its options (Open, Rename, Copy, Move, Delete).
   // Copy and Move remember the item (FM.clip); you go to the folder you want and ▶ there offers Paste here. Delete
   // always asks first, with Cancel in focus. Videos, music and documents open in an app that can play or read them
   // (FileShare hands that app the one file); app installers never open. Every change needs a real OK press (Home.java).

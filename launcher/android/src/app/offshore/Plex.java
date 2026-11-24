@@ -13,10 +13,9 @@ import java.io.OutputStream;
 import java.net.URLEncoder;
 
 /**
- * Plex's Continue watching on the Keep watching row (owner, 24 November 2026: "we want the plex link as long as its
- * secure"). The Plex app doesn't tell Fire TV what it plays, so Offshore asks the owner's Plex servers instead.
+ * Plex's Continue watching on the Keep watching row. The Plex app doesn't tell Fire TV what it plays, so Offshore asks the user's Plex servers instead.
  *
- * Linking is Plex's own TV sign-in: Offshore shows a short code, the owner enters it at plex.tv/link on a phone and
+ * Linking is Plex's own TV sign-in: Offshore shows a short code, the user enters it at plex.tv/link on a phone and
  * signs in there. Offshore never sees the Plex password. The access token Plex hands back stays in this app's private
  * storage (backups are off, see the manifest); the page never gets it, only titles, progress and small pictures.
  * Every request is HTTPS (plex.tv, and the servers' plex.direct addresses, which carry real certificates); redirects

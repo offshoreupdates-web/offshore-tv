@@ -24,7 +24,7 @@
     { id: "classical", name: "Classical", icon: "🎻", tag: "classical" }, { id: "christian", name: "Christian", icon: "✝", tag: "christian" },
     { id: "latin", name: "Latin", icon: "💃", tag: "latin" }
   ];
-  // Holiday (owner, 23 November 2026): holiday music stations. The directory's tags are loose ("christmas music" is on
+  // Holiday: holiday music stations. The directory's tags are loose ("christmas music" is on
   // country stations that play some at Christmas), so a station is kept when its name says it (Christmas, Xmas, Holiday,
   // Santa, Noel, Navidad, Halloween); several tags and a name search are merged. In season (1 Nov to 6 Jan, and October
   // for Halloween) it sits at the top of Radio, after Near you; the rest of the year it's last in Browse.
@@ -305,8 +305,7 @@
   // Playing. The app plays https only; an http link is tried over https (most streaming hosts offer both), then over
   // https without its port: hosts like streamtheworld.com list "http://n.live.streamtheworld.com:3690/X" but answer
   // https on the usual port. Measured 23 November 2026 on 31 http-only Pennsylvania stations: 19 play over https as
-  // listed, 2 more without the port, 10 not at all. Those last ones play unencrypted through the app's relay (owner:
-  // "unencrypted radio is fine"): "relay:http://…" is tried last, and only for a station whose own link is http. The
+  // listed, 2 more without the port, 10 not at all. Those last ones play unencrypted through the app's relay: "relay:http://…" is tried last, and only for a station whose own link is http. The
   // address that worked is remembered (radioWorks) and tried first.
   function rdLinks(s) {
     var u = String(s.u || ""), a = u.replace(/^http:\/\//i, "https://"), b = a.replace(/^(https:\/\/[^\/:?#]+):\d+/i, "$1"), w = (load("radioWorks") || {})[s.id];

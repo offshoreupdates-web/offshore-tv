@@ -30,7 +30,7 @@
   var MUSIC = { allowed: false, bt: "" }, dockCard = null, dcRow = 0, dcCol = 0, dcButtons = [], npTimer = 0, musicApps = null;
   // The Now playing card under the clock, and a line in ambient mode. Text from the music app: never markup.
   var miniTimer = 0;
-  // Now playing lives in the dock (owner): the Music chip shows the artwork, title over artist and a hairline progress
+  // Now playing lives in the dock: the Music chip shows the artwork, title over artist and a hairline progress
   // line; the other chips shrink to their icons (names come back on focus), so the dock never changes size. The ambient
   // clock shows the song too. Text from the music app: never markup.
   function renderNowPlaying() {

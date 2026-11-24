@@ -133,7 +133,7 @@
     if (app && app.order) app.order(apps.map(function (a) { return a.id; }).join(","));   // for tools/audit.ps1
   }
 
-  // One row of tiles for any number of apps (owner's choice, Apple TV top-shelf style): six fit on screen, and
+  // One row of tiles for any number of apps (Apple TV top-shelf style): six fit on screen, and
   // moving left or right glides the row so the rest slide in; the next tile peeks in at the edge.
   var TILE_STEP = 292, TILE_VIS = 6, winStart = 0, tileCol = 0;   // 256 px tiles + 36 px gap
   function build(tv) {

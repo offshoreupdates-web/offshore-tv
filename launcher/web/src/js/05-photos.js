@@ -101,7 +101,7 @@
     var c = document.getElementById("credit");                        // free licences ask for the author's name
     c.textContent = ph.shared ? "Shared from " + ph.a : ph.a ? "Photo: " + ph.a + (ph.l ? " · " + ph.l : "") + " · " + srcName(ph) : "";
   }
-  // Settings > Backgrounds previews the highlighted set behind the panel (owner: "preview as we select them").
+  // Settings > Backgrounds previews the highlighted set behind the panel.
   var previewing = false;
   function previewBg(r) {
     if (!r) return;
@@ -132,7 +132,7 @@
     if (list && list.length) showPhoto(list[Math.max(0, pinnedPhoto(p))]);   // its kept photo, if it has one
   }
   function endPreview() { if (previewing) { previewing = false; document.body.classList.remove("previewing"); shownSet = ""; if (PREFS.bg.indexOf("vid:") !== 0 || liveSet !== "vid:" + liveTopic()) liveStop(); nextPhoto(); liveSync(); } }
-  // A chosen photo set follows the time of day too (owner), unless Backgrounds > Photos > Match the time of day is off:
+  // A chosen photo set follows the time of day too, unless Backgrounds > Photos > Match the time of day is off:
   // only its photos for now (golden around sunrise and sunset, day, night), else night falls back to its sunsets, and a
   // set with nothing for this time (or downloaded before photos were sorted) shows all its photos.
   function timeMatched(p, list) {

@@ -22,7 +22,7 @@ import java.util.Map;
  * a fresh code each time (five wrong tries end it), small requests, and only links from known calendar services
  * (Calendars.allowed). The link goes to the page through Listener and is fetched like any other calendar.
  *
- * The same form adds a Live TV playlist (playlist mode, Settings > Live TV): an http(s) M3U link the owner has the
+ * The same form adds a Live TV playlist (playlist mode, Settings > Live TV): an http(s) M3U link the user has the
  * right to watch (a box they must tick says so). The link goes to LiveTv, never to the page.
  */
 final class CalendarLink {
@@ -155,7 +155,7 @@ final class CalendarLink {
         out.flush();
     }
 
-    // Live TV: the same calm form, worded for a playlist. Nothing here names or suggests a provider (owner's rule).
+    // Live TV: the same calm form, worded for a playlist. Nothing here names or suggests a provider.
     private void playlistPage(Socket s, String message) throws Exception {
         boolean done = "OK".equals(message);
         String esc = message == null ? "" : message.replace("&", "&amp;").replace("<", "&lt;");

@@ -1,0 +1,32 @@
+name: Bug report
+description: Something in Offshore doesn't work as it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Offshore version
+      description: Settings › Updates & about.
+      placeholder: "0.18"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Fire TV device and Fire OS version
+      description: Settings › My Fire TV › About.
+      placeholder: "Fire TV Cube (3rd gen), Fire OS 7.7.1.7"
+    validations:
+      required: true
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: Screenshots or logs help. Leave out addresses, tokens and account details.

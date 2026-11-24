@@ -1,4 +1,4 @@
-  // Home extras, 0.17 (owner, 23 November 2026: each one the user's to turn off):
+  // Home extras, 0.17 (each one the user can turn off):
   // weather on the background, the lighter home for slow TVs, and full-screen Now playing. The big clock is CSS only
   // (homeClockStyle, a class from applyTheme).
 

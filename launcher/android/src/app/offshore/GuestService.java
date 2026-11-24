@@ -82,7 +82,7 @@ public class GuestService extends AccessibilityService {
      * service later drops out of the TV's list (a Fire OS update, a reset, another app rewriting the list), Home would
      * quietly go back to Amazon's screen; with that permission the app can put its own entry back. Only this app's
      * entry is added, others are left as they are. setup_tv.ps1 -Undo revokes the permission first, so this never
-     * overrides the owner turning it off. Called at start, after boot and updates (Startup) and every minute (Home).
+     * overrides the user turning it off. Called at start, after boot and updates (Startup) and every minute (Home).
      * Returns true if it changed anything.
      */
     static boolean ensureOn(Context c) {
@@ -214,7 +214,7 @@ public class GuestService extends AccessibilityService {
         return true;
     }
 
-    // Fox One's show name (owner, 24 November 2026: "try reading fox one"). Fox One tells Fire TV nothing about what
+    // Fox One's show name. Fox One tells Fire TV nothing about what
     // it plays, but its player screen carries the programme's name. With Settings › Home screen › Keep watching › Fox One show names on
     // (off by default; Home.screenTitlesOn), this reads that one line every 30 s while Fox One is in front, and stops
     // when it isn't. Only Fox One, only the name; it goes to the Keep watching card and nowhere else.

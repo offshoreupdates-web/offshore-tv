@@ -131,7 +131,7 @@ final class Home {
         systemUpdated();
         loadSounds();
         Alerts.restart(app);
-        GuestService.ensureOn(app);                        // the Home button, if the owner set it up and it was dropped
+        GuestService.ensureOn(app);                        // the Home button, if the user set it up and it was dropped
         main.postDelayed(new Runnable() {                  // a tv.json pushed while nobody uses the TV: apply it within a minute
             @Override
             public void run() { if (gone) return; reloadIfConfigChanged(); GuestService.ensureOn(app); main.postDelayed(this, 60000); }
@@ -589,7 +589,7 @@ final class Home {
         sendMusic();
     }
 
-    // ---- Keep watching from your own apps (owner, 23 November 2026: "my main one is Fox One or Plex"). Fire OS keeps
+    // ---- Keep watching from your own apps. Fire OS keeps
     // apps' Continue watching lists private, but a video app that plays something tells Android what (title, artwork,
     // where you are) through its media session, the same thing the Music card reads. Offshore notes the latest show per
     // app while it plays and hands it to the page (guestWatch) once the home screen is back. Nothing leaves the TV.
@@ -604,8 +604,7 @@ final class Home {
     /** Settings › Home screen › Keep watching › Fox One show names (GuestService reads Fox One's screen only while this is on). */
     static boolean screenTitlesOn(Context c) { return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("screen_titles", false); }
 
-    // ---- Which Fox One channel a show is on (owner, 24 November 2026: "look it up but make sure it looks correct based
-    // off of the specific channel name"). Fox One's screen names the show, never the channel. TVmaze (a public TV
+    // ---- Which Fox One channel a show is on. Fox One's screen names the show, never the channel. TVmaze (a public TV
     // listings database) is asked once per show name; its answer counts only if its show's name is the same as the one
     // on screen and its channel is one of Fox One's. Live sports and specials TVmaze doesn't list are named only where
     // the title itself says the channel; otherwise there's no channel (the card keeps Fox One's look). Kept on the TV.
@@ -2128,7 +2127,7 @@ final class Home {
         @JavascriptInterface
         public long sleepLeft() { return sleepAt > 0 ? Math.max(0, sleepAt - System.currentTimeMillis()) : 0; }
 
-        /** Remove an app the owner installed: Android shows its own confirmation. Fire OS's apps and this one can't be removed. */
+        /** Remove an app the user installed: Android shows its own confirmation. Fire OS's apps and this one can't be removed. */
         @JavascriptInterface
         public boolean uninstall(final String pkg) {
             try {
@@ -2145,7 +2144,7 @@ final class Home {
             return true;
         }
 
-        /** {on, canChange}: Developer access (ADB). Changing it needs WRITE_SECURE_SETTINGS, granted by the owner once. */
+        /** {on, canChange}: Developer access (ADB). Changing it needs WRITE_SECURE_SETTINGS, granted by the user once. */
         @JavascriptInterface
         public String adbGet() {
             boolean on = Settings.Global.getInt(app.getContentResolver(), Settings.Global.ADB_ENABLED, 0) == 1;
@@ -2166,7 +2165,7 @@ final class Home {
         }
 
         // ---- Tidy up Fire TV (Settings > Fire TV > Tidy up Fire TV) -----------------------------------------------
-        // Fire OS lets no app switch other apps off, so the TV only keeps the owner's choice (tidy.json, in this app's
+        // Fire OS lets no app switch other apps off, so the TV only keeps the user's choice (tidy.json, in this app's
         // folder, read by tools\setup_tv.ps1 through ConfigDrop) and setup_tv.ps1 applies it with pm disable-user / enable,
         // touching only packages in assets/debloat.json. It records what it switched off in tidy_done.json.
 
@@ -2194,7 +2193,7 @@ final class Home {
             return out.toString();
         }
 
-        /** Keep the owner's choice {off: [...], on: [...]} for setup_tv.ps1; only catalog packages are kept. */
+        /** Keep the user's choice {off: [...], on: [...]} for setup_tv.ps1; only catalog packages are kept. */
         @JavascriptInterface
         public boolean tidySave(String json) {
             try {
@@ -2415,7 +2414,7 @@ final class Home {
         }
 
         /**
-         * One photo from the network folder, ready to show: the owner's photos are cropped and shaded like the others;
+         * One photo from the network folder, ready to show: the user's photos are cropped and shaded like the others;
          * downloads kept there (Offshore/...) already are. Only the last few are kept on the TV (cache/nas), so the network
          * folder uses next to no storage here. Answers with the photo's file URL.
          */
@@ -2492,7 +2491,7 @@ final class Home {
 
         /**
          * Task manager (Customize > Task manager): apps used in the last day, newest first, with when and for how long.
-         * Needs usage access, which the owner grants once (adb shell appops set <package> GET_USAGE_STATS allow);
+         * Needs usage access, which the user grants once (adb shell appops set <package> GET_USAGE_STATS allow);
          * without it "allowed" is false and the list is empty.
          */
         @JavascriptInterface
@@ -2592,7 +2591,7 @@ final class Home {
             } catch (Exception e) { return ""; }
         }
 
-        // ---- Updates from the owner's site (Updater.java) ----
+        // ---- Updates from Offshore's update site (Updater.java) ----
 
         /** The update site's host, or "" when this build has none. */
         @JavascriptInterface public String updateSite() { return Updater.feedHost(); }
@@ -2688,7 +2687,7 @@ final class Home {
         @JavascriptInterface
         public void calPhoneStop() { if (calLink != null) { calLink.stop(); calLink = null; } }
 
-        // ---- Live TV (LiveTv): the owner's own playlists, played in VLC. The page never sees a link or stream address.
+        // ---- Live TV (LiveTv): the user's own playlists, played in VLC. The page never sees a link or stream address.
         private final LiveTv.Done liveDone = new LiveTv.Done() {
             @Override public void done(String id, String error, int count) {
                 final String js = "window.guestLiveTv && guestLiveTv(" + org.json.JSONObject.quote(id) + "," + org.json.JSONObject.quote(error) + "," + count + ")";
@@ -2797,7 +2796,7 @@ final class Home {
         }
 
         /**
-         * Task manager > Uninstall apps: every app the owner installed (never Fire OS's own, never this one), with its
+         * Task manager > Uninstall apps: every app the user installed (never Fire OS's own, never this one), with its
          * size and when it was last used (both need usage access; without it the size is the app's installer file and
          * "last" is 0). Least used first.
          */
@@ -2939,7 +2938,7 @@ final class Home {
             sendCmd(app, "opening_settings");
             start(new Intent("com.amazon.device.settings.about.action.CHECK_FOR_UPDATES"), "Fire TV updates");
         } else if ("getvlc".equals(id)) {
-            // Live TV plays in VLC: its page in the Amazon Appstore, where the owner installs it.
+            // Live TV plays in VLC: its page in the Amazon Appstore, where the user installs it.
             Intent g = new Intent(Intent.ACTION_VIEW, Uri.parse("amzn://apps/android?p=" + LiveTv.VLC));
             if (g.resolveActivity(app.getPackageManager()) != null) start(g, "VLC in the Appstore");
             else handle("appstore");
@@ -3121,7 +3120,7 @@ final class Home {
 
     /**
      * Apps installed from now on (not part of Fire OS) that have a TV launcher entry, except this app and tv.json "hide".
-     * Apps that were already there keep the owner's chosen lineup (tv.json "apps"): only installs since the first run of
+     * Apps that were already there keep the user's chosen lineup (tv.json "apps"): only installs since the first run of
      * this version, less 12 hours (so that day's installs count), get a tile by themselves.
      */
     static java.util.List<String> autoApps(Context c) {
@@ -3157,7 +3156,7 @@ final class Home {
 
     // ---- Quiet update notices (Customize > Notifications > App and system updates) --------------------------------
 
-    /** An app was updated: a quiet notice, for apps on the home screen or that the owner installed (not Fire OS's own). */
+    /** An app was updated: a quiet notice, for apps on the home screen or that the user installed (not Fire OS's own). */
     private void appUpdated(String pkg) {
         try {
             android.content.pm.PackageInfo pi = app.getPackageManager().getPackageInfo(pkg, 0);

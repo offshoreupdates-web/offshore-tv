@@ -1,11 +1,10 @@
-  // Settings is a short list of folders (owner: "organized, easy to use"), each holding a few settings; Restore defaults
+  // Settings is a short list of folders, each holding a few settings; Restore defaults
   // and Save settings stay at the bottom of the first list.
   var GROUPS = [
     { id: "look", label: "Appearance", keys: ["theme", "font", "accent", "glass", "tint", "focusStyle", "focusFx", "tileShape", "tileDim", "motion", "lite", "wxFx", "npFull", "bg", "speed"] },
     { id: "saver", label: "Screensaver", keys: ["ambient", "ssStyle", "ssLayout", "ssSize", "ssCal", "ssNews", "ssNewsPick", "ssStocks", "ssCrypto"] },
     { id: "info", label: "Home screen", keys: ["homeLayout", "g:kw", "cards", "homeClock", "homeClockStyle", "homeClockSize", "homeWeek", "homeAir", "beach", "homeInfo", "homeInfoSize", "homeHero", "homeBar", "homeHint", "edges", "tileAuto", "tileOrder", "hiddenTiles"] },
-    // Keep watching and the apps that feed it, together in one folder inside Home screen (owner: "fix the UI in the
-    // settings where the Plex and Fox ones settings are"). In use order, not A to Z.
+    // Keep watching and the apps that feed it, together in one folder inside Home screen. In use order, not A to Z.
     { id: "kw", label: "Keep watching", parent: "info", keys: ["kw", "kwWhere", "plex", "foxRead"], fixed: true },
     { id: "sport", label: "Sports", keys: ["sports", "leagues", "teams"] },
     { id: "notif", label: "Notifications", keys: ["alertsOn", "alertSound", "gameNotices", "notifPos", "updNotices", "pauseN", "webhook"] },
@@ -13,7 +12,7 @@
     { id: "share", label: "Devices & sharing", keys: ["bluetooth", "share", "mirror"] },
     { id: "net", label: "Network & storage", keys: ["filesOpen", "netSettings", "speedTest", "nasFolder", "storage"] },
     { id: "tv", label: "This TV", keys: ["room", "location", "lang", "tz", "units", "clock"] },
-    { id: "fire", label: "Fire TV", keys: ["fireHome", "fireSettings", "tidy"], fixed: true },   // owner: Home first, not A to Z
+    { id: "fire", label: "Fire TV", keys: ["fireHome", "fireSettings", "tidy"], fixed: true },   // Home first, not A to Z
     { id: "cal", label: "Calendar", link: "cal", keys: [] },
     { id: "livetv", label: "Live TV", link: "livetv", keys: [] },
     { id: "tasks", label: "Task manager", link: "tasks", keys: [] },
@@ -24,7 +23,7 @@
   var picSet = "";                                        // the photo set whose photos Backgrounds › Photos › a set shows
   var clipSet = "";                                       // the live set whose clips Backgrounds › Live video › a set shows
   function rowOf(key) { return PREF_ROWS.filter(function (r) { return r.key === key; })[0]; }
-  // Folders A to Z, and the settings in each folder A to Z (owner), sorted here so new ones always land in order.
+  // Folders A to Z, and the settings in each folder A to Z, sorted here so new ones always land in order.
   // Related rows are named to sit together ("Check for updates", "Check how often", "Check now", "Check time").
   (function () {
     var lab = function (k) { var r = k.indexOf("g:") === 0 ? GROUPS.filter(function (g) { return "g:" + g.id === k; })[0] : rowOf(k); return (r ? r.label : k).toLowerCase(); };
@@ -256,7 +255,7 @@
   }
 
   // Settings > Fire TV > Tidy up Fire TV: the Amazon extras in debloat.json that are on this TV, to switch off or back on.
-  // Fire OS lets no app switch other apps off, so the TV keeps the owner's choice (app.tidySave -> tidy.json) and
+  // Fire OS lets no app switch other apps off, so the TV keeps the user's choice (app.tidySave -> tidy.json) and
   // tools\setup_tv.ps1, the same one-time computer step as the Home button, applies it (pm disable-user / enable,
   // nothing uninstalled, only catalog packages). Amazon's ad screensaver is a setting the app can change itself once
   // set up. The preview reads debloat.json and makes up states.
@@ -274,7 +273,7 @@
       if (custOpen && custMode === "tidy") renderCustom();
     }, function () { TIDY = { groups: [], items: [] }; });
   }
-  function tidyChoice() {                               // {off: [...], on: [...]}: only what the owner changed
+  function tidyChoice() {                               // {off: [...], on: [...]}: only what the user changed
     var c = (TIDY && TIDY.choice) || load("tidy") || {};
     return { off: (c.off || []).slice(), on: (c.on || []).slice() };
   }
@@ -405,7 +404,7 @@
       if (!app.appInfo(r.pkg)) toast("Couldn't open app info");
     }
   }
-  // Task manager > Uninstall apps: the apps the owner installed (Fire OS's own can't be removed), least used first, with
+  // Task manager > Uninstall apps: the apps the user installed (Fire OS's own can't be removed), least used first, with
   // their size. OK asks Fire TV to remove one (its own confirmation screen); ▶ opens its Fire TV page. Asked once when
   // the page opens and again when an app is removed (guestAppsChanged), never on a key press.
   var UNINST = null;
@@ -899,8 +898,7 @@
     });
   }
   // Appearance and Home screen change the home as you go (applyPrefs), so there the panel steps to the right and the
-  // dimming goes: the home stays in view beside the list (owner: "see the changes they are making, not just the
-  // options"). On the weather row, a shower of rain shows what Weather on the background looks like on a dry day.
+  // dimming goes: the home stays in view beside the list. On the weather row, a shower of rain shows what Weather on the background looks like on a dry day.
   function custLive(cur) {
     var live = custOpen && (custMode === "g:look" || custMode === "g:info" || custMode === "g:kw");
     document.body.classList.toggle("cust-live", live);

@@ -1,4 +1,4 @@
-  // What each setting does, shown under the list while it's highlighted (owner: "polished, the user in control").
+  // What each setting does, shown under the list while it's highlighted.
   var HELP = {
     look: "Light or dark, fonts and colors, and the backgrounds behind everything.",
     tasks: "How the TV is doing (memory, storage, temperature) and the apps used today. Close the ones running in the background.",
@@ -134,7 +134,7 @@
     media: ["#ff375f", '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>'],
     net: ["#0a84ff", '<path d="M2 9a15 15 0 0 1 20 0"/><path d="M5.5 12.5a10 10 0 0 1 13 0"/><path d="M9 16a5 5 0 0 1 6 0"/><path d="M12 19.5h.01"/>'],
     upd: ["#40c8e0", '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 21v-5h-5"/>'],
-    // Settings › Fire TV, at the owner's request: the folder and both of Amazon's screens get a trash can.
+    // Settings › Fire TV: the folder and both of Amazon's screens get a trash can.
     fire: ["#636366", '<path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/>'],
     trash:["#636366", '<path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/>']
   };

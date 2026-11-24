@@ -34,7 +34,7 @@
   /* Playing: the Music chip holds the song; the others shrink to icons (their names return on focus). */
   .dock.playing .dchip:not(#dMusic):not(.focus) span, .dock.compact .dchip:not(#dMusic):not(.focus) span { display: none; }
   .dock.playing .dchip:not(#dMusic):not(.focus), .dock.compact .dchip:not(#dMusic):not(.focus) { padding-right: 5px; }
-  /* Icons only and nothing playing: Music is an icon like the others, its name shows on focus (owner). */
+  /* Icons only and nothing playing: Music is an icon like the others, its name shows on focus. */
   .dock.compact:not(.playing) #dMusic:not(.focus) span { display: none; }
   .dock.compact:not(.playing) #dMusic:not(.focus) { padding-right: 5px; }
   #dMusic.playnow .well { border-radius: 12px; overflow: hidden; }

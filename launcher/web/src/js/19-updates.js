@@ -1,8 +1,8 @@
   // ---- Updates (Settings > Updates & about) -----------------------------------------------------------------------
   // Official sources and stable versions only: Offshore from its GitHub releases ("latest" never includes betas or
   // pre-releases; Android also refuses an update signed with another key), Kodi's final releases from kodi.tv's own
-  // server (no alpha / beta / rc / nightly), Appstore apps and Fire OS by Amazon. Checks run on the owner's schedule
-  // (how often, and from what time of day); an update found becomes a notice. Installing stays the owner's step.
+  // server (no alpha / beta / rc / nightly), Appstore apps and Fire OS by Amazon. Checks run on the user's schedule
+  // (how often, and from what time of day); an update found becomes a notice. Installing stays the user's step.
   var UPDATE_REPO = "", updTimer = 0;
   function cmpVer(a, b) {                                   // 2.26 < 2.26.1 < 2.27
     var x = String(a).replace(/^v/, "").split("."), y = String(b).replace(/^v/, "").split(".");
@@ -12,6 +12,13 @@
   // What's new: the notes for recent versions, newest first. Shown once after an update (a quiet notice with the
   // highlights) and in full under Settings > Updates & about > What's new. Written for the person on the couch.
   var CHANGELOG = [
+    ["0.19", "November 2026", ["Backgrounds from NASA, The Met, the Art Institute of Chicago and the Library of Congress, alongside Wikimedia Commons",
+                              "Search for photos across all five sources, and search for live videos on Wikimedia Commons and NASA",
+                              "Live backgrounds play again",
+                              "Sound output shows what your TV or sound system really gets: stereo, or the surround format when surround is on",
+                              "Keep watching now includes YouTube and Amazon's other video apps",
+                              "The app name sits in the right place when there's no Keep watching row, and weather alerts sit under the clock",
+                              "Offshore is open source under the GNU GPL, with every library and source credited in About"]],
     ["0.18", "November 2026", ["Security: a full review of the app. Text from radio station lists is handled more strictly, the home screen refuses any outside script, and the radio relay keeps away from your home network",
                               "Privacy: the settings backup no longer includes what you watched or listened to",
                               "Settings › Home screen › Keep watching: Keep watching, Plex and Fox One show names together in one place"]],
@@ -114,7 +121,7 @@
   var OS_NAME = null, SOUND_OUT = null;
   function updState() { return load("updstate") || {}; }
   function myVersion() { return app && app.pkgVersion ? app.pkgVersion("app.offshore") : "preview"; }
-  // The owner's site (Updater.java): latest.json says the newest version, its notes, the APK and its fingerprint.
+  // Offshore's update site (Updater.java): latest.json says the newest version, its notes, the APK and its fingerprint.
   function updateSite() { return app && app.updateSite ? app.updateSite() : ""; }
   var feedWait = null;
   window.guestUpdateFeed = function (j) { if (feedWait) { var f = feedWait; feedWait = null; f(j); } };

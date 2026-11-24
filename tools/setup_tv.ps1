@@ -5,11 +5,11 @@
 #   Add -Undo to turn them all off again (and switch back on what Tidy up switched off).
 #   Add -NoTidy to leave Tidy up alone.
 # Home button (accessibility service), music controls (notification listener), Task manager's app list (usage access)
-# and the developer access switch (WRITE_SECURE_SETTINGS). These are security settings on the TV, so the owner runs
+# and the developer access switch (WRITE_SECURE_SETTINGS). These are security settings on the TV, so the user runs
 # this. Fire OS has no screen for them and doesn't let apps reach its developer connection, hence a computer.
 # Needs ADB debugging on (Fire TV Settings > My Fire TV > Developer options). Customize > Security & privacy >
 # Permissions & setup on the TV shows the result.
-# Tidy up Fire TV: the owner picks Amazon extras to switch off on the TV (Settings > Fire TV > Tidy up Fire TV; the app
+# Tidy up Fire TV: the user picks Amazon extras to switch off on the TV (Settings > Fire TV > Tidy up Fire TV; the app
 # saves tidy.json), and this applies it, because Fire OS lets no app switch other apps off. Only packages listed in
 # launcher\web\debloat.json are ever touched, never one matching its "never" list, and only with pm disable-user / pm
 # enable (nothing is uninstalled). What this switched off is kept on the TV in tidy_done.json, so -Undo from any

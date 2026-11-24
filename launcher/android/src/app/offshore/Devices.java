@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Bluetooth and Wi-Fi inside Customize, so people rarely need Fire TV's own screens (owner's wish). Everything here is
+ * Bluetooth and Wi-Fi inside Customize, so people rarely need Fire TV's own screens. Everything here is
  * the public Android API a normal app may use; finding devices and networks needs the location permission (Android ties
  * scanning to it), asked once with Android's own prompt.
  * Safety: Bluetooth is never turned off, and the Fire TV remote (and Amazon accessories) can't be forgotten from here,

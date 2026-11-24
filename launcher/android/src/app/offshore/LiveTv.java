@@ -17,16 +17,16 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Live TV: the owner's own IPTV playlists (M3U), played in VLC. Offshore ships no channels, no example playlists and no
- * way to find any: it only reads links the owner adds from their phone (CalendarLink in playlist mode), after they
- * confirm they have the right to watch them. Owner's rule (November 2026): user's own links only; player only (no
+ * Live TV: the user's own IPTV playlists (M3U), played in VLC. Offshore ships no channels, no example playlists and no
+ * way to find any: it only reads links the user adds from their phone (CalendarLink in playlist mode), after they
+ * confirm they have the right to watch them. Rule: user's own links only; player only (no
  * recording, downloading or sharing of streams).
  *
  * Playlist links and stream addresses often hold the provider's username and password, so they stay in this app's
  * private storage (getFilesDir: never the shared folder, never the settings backup) and never reach the page: the page
  * gets channel names and groups, and plays a channel by its list and position.
  *
- * Light on purpose: a playlist is read once (and again when the owner refreshes it, or when it's a day old and Live TV
+ * Light on purpose: a playlist is read once (and again when the user refreshes it, or when it's a day old and Live TV
  * opens), on a low-priority thread, capped at 30 MB and 20,000 channels; nothing runs while Live TV is closed.
  */
 final class LiveTv {
@@ -205,7 +205,7 @@ final class LiveTv {
         return out;
     }
 
-    // ---- The programme guide (XMLTV, from the owner's provider: the playlist's own link or one they added) -----------
+    // ---- The programme guide (XMLTV, from the user's provider: the playlist's own link or one they added) -----------
     static String guideUrl(JSONObject l) { String u = l.optString("epg", ""); return u.isEmpty() ? l.optString("epgAuto", "") : u; }
 
     /** Read a playlist's guide in the background (when Live TV opens and the guide is over 6 hours old). */

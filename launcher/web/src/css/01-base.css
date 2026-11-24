@@ -3,7 +3,7 @@
     --safe-x: 120px;            /* tvOS keeps content inset from overscan edges */
     --accent: #0a84ff; --accent-rgb: 10,132,255;   /* Settings › Appearance › Accent colour (applyTheme) */
     --safe-y: 64px;
-    --tile-w: 256px;            /* six on screen (owner wanted a bit more background showing) */
+    --tile-w: 256px;            /* six on screen */
     --tile-h: 144px;
     --gap: 36px;
     --text: #fff;

@@ -6,7 +6,7 @@
   var CONFIG = { units: "fahrenheit" };           // temperature unit default; tv.json "weather.units" can change it
 
   // Settings (the panel behind the status box): saved on this TV. Temperature defaults to tv.json's units.
-  // A to Z (owner's choice), with Restore defaults and Save settings last.
+  // A to Z, with Restore defaults and Save settings last.
   var PREF_ROWS = [
     { key: "ambient", label: "Start after", opts: [[300, "5 minutes"], [900, "15 minutes"], [1800, "30 minutes"], [0, "Off"]] },
     { key: "ssStyle", label: "Style", opts: [["mirror", "Smart mirror"], ["photo", "Over the photo"]] },
@@ -22,7 +22,7 @@
     { key: "font", label: "Font", opts: [["system", "Modern"], ["light", "Light"], ["condensed", "Condensed"], ["serif", "Classic serif"]] },
     { key: "accent", label: "Accent color", opts: [["blue", "Blue"], ["teal", "Teal"], ["green", "Green"], ["orange", "Orange"], ["pink", "Pink"],
                                                      ["purple", "Purple"], ["gold", "Gold"], ["red", "Red"]] },
-    // Look options (owner, 23 November 2026), all done in CSS classes on <body>, so they
+    // Look options, all done in CSS classes on <body>, so they
     // cost nothing while the home sits still.
     { key: "glass", label: "Glass", opts: [["frosted", "Frosted"], ["clear", "Clear"], ["smoky", "Smoky"], ["solid", "Solid (fastest)"]] },
     { key: "tileShape", label: "App tile corners", opts: [["round", "Rounded"], ["soft", "Extra round"], ["crisp", "Crisp"]] },
@@ -102,7 +102,7 @@
     { key: "updFreq", label: "Check how often", opts: [["daily", "Every day"], ["weekly", "Every week"], ["monthly", "Every month"]] },
     { key: "updHour", label: "Check time", opts: [[3, "3 AM"], [5, "5 AM"], [12, "Noon"], [18, "6 PM"], [21, "9 PM"], [0, "Any time"]] },
     { key: "updNow", label: "Check now", live: true },
-    // Updates & about, made simple (owner): Offshore's own update first (OK checks, or installs one that's ready), one
+    // Updates & about, made simple: Offshore's own update first (OK checks, or installs one that's ready), one
     // schedule row, and everything else (apps, Fire OS, Kodi, check time) one level down.
     { key: "updOffshore", label: "Offshore", live: true },
     { key: "updAuto", label: "Check automatically", live: true, adj: true },

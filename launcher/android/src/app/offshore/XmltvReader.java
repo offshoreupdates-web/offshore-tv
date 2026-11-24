@@ -19,7 +19,7 @@ import java.util.zip.GZIPInputStream;
 
 /**
  * Live TV's programme guide: reads an XMLTV file (the guide IPTV services publish next to their playlist, often gzipped)
- * as a stream, keeping only the owner's channels and the hours asked for, so a 100 MB guide never sits in memory.
+ * as a stream, keeping only the user's channels and the hours asked for, so a 100 MB guide never sits in memory.
  * Plain Java (no Android parts), so it can be tested on a computer. Channels are found by the playlist's tvg-id, or by
  * name when a playlist has none (the guide's <channel> display names, which come before the programmes).
  */

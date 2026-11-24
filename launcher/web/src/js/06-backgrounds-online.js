@@ -90,7 +90,7 @@
     });
   }
   // Which part of the day a photo belongs to ("golden" sunrise/sunset, "day" or "night"), so any set can follow the
-  // time of day like the beach photos (owner). Its name first ("Sunset over...", "...at night"), else its light, read
+  // time of day like the beach photos. Its name first ("Sunset over...", "...at night"), else its light, read
   // from a tiny copy: dark and cool is night; golden when the picture, its sky or its brightest tenth (the sun's glow)
   // is warm and the sky isn't plainly blue (so midday deserts and sand stay day); a dark sky over a dark picture is
   // night (blue hour); the rest day. Checked on contact sheets of beaches, sunsets, deserts and cities at night.
@@ -183,7 +183,7 @@
     save("bgcats", mine);
     if (PREFS.bg === "cat:" + id) { shownSet = ""; nextPhoto(); }  // falls back to the time of day
   }
-  // ---- More free sources (owner, 24 November 2026: "pull from more sources other than wiki") ----------------
+  // ---- More free sources ----------------
   // Every source here is free to use with no account or key, and only work that's free of copyright comes through:
   //   nasa  NASA Image and Video Library: NASA's own photos and videos (public domain)
   //   met   The Met's Open Access (its v1.1 search; v1 was retired in October 2026): public-domain works only
@@ -269,22 +269,20 @@
   }
   // NASA's videos for live backgrounds: its MP4 copies (the large one, about 1080p), public domain.
   function nasaVideos(cat) {
-    if (cat.ids) return Promise.resolve(cat.ids.map(function (id) {
+    // A video's copies follow a fixed pattern on images-assets.nasa.gov (its file list there can't be read from the page:
+    // no CORS), so the large MP4 (about 1080p) is addressed directly; one that doesn't exist is skipped when it won't play.
+    var clip = function (id, title, center) {
       var e = encodeURIComponent(id);
-      return { url: "https://images-assets.nasa.gov/video/" + e + "/" + e + "~large.mp4", f: id.replace(/_/g, " "), u4: "", mb4: 0, h: 1080, a: cat.name, l: "Public domain", s: "nasa" };
-    }));
+      return { url: "https://images-assets.nasa.gov/video/" + e + "/" + e + "~large.mp4", f: title || id.replace(/_/g, " "), u4: "", mb4: 0, h: 1080,
+               a: center ? "NASA " + center : cat.name || "NASA", l: "Public domain", s: "nasa" };
+    };
+    if (cat.ids) return Promise.resolve(cat.ids.map(function (id) { return clip(id); }));
     return getJson("https://images-api.nasa.gov/search?media_type=video&page_size=40&q=" + encodeURIComponent(cat.q)).then(function (j) {
-      var items = ((j.collection && j.collection.items) || []).filter(function (it) { return it.href && /^https?:\/\/images-assets\.nasa\.gov\/video\//.test(it.href); }).slice(0, 14);
-      return Promise.all(items.map(function (it) {
+      return ((j.collection && j.collection.items) || []).map(function (it) {
         var d = (it.data || [])[0] || {};
-        return getJson(https(it.href).replace(/ /g, "%20")).then(function (files) {
-          var pick = function (k) { return (files || []).filter(function (f) { return new RegExp("~" + k + "\\.mp4$").test(f); })[0]; };
-          var f = pick("large") || pick("medium");
-          if (!f) return null;
-          return { url: https(f).replace(/ /g, "%20"), f: d.title || d.nasa_id || "", u4: "", mb4: 0, h: 1080, a: (d.center ? "NASA " + d.center : "NASA").slice(0, 60), l: "Public domain", s: "nasa" };
-        }).catch(function () { return null; });
-      }));
-    }).then(function (l) { return l.filter(Boolean).slice(0, VID_PER); });
+        return d.nasa_id && /^[\w .,()-]{3,120}$/.test(d.nasa_id) ? clip(d.nasa_id, d.title, d.center) : null;
+      }).filter(Boolean).slice(0, VID_PER);
+    });
   }
   // ---- Live backgrounds (Settings > Backgrounds, under "Live backgrounds") ----------------------------------
   // A silent video behind the home screen and the screensaver: free clips from Wikimedia Commons (its own 1080p or 720p
@@ -494,7 +492,7 @@
   var vidEl = document.getElementById("bgVid"), liveSet = "", liveIdx = 0, liveStart = 0, liveFails = 0;
   // "Holidays & seasons" picks today's set: around each holiday people celebrate (New Year's, Valentine's, St. Patrick's,
   // Easter, Mother's and Father's Day, Memorial Day, the 4th of July, Halloween, Veterans Day, Thanksgiving, Christmas)
-  // its own clips, otherwise the season's. Other observance days are left out, at the owner's request.
+  // its own clips, otherwise the season's. Other observance days are left out.
   function easter(y) {                                  // Gregorian Easter Sunday (the anonymous algorithm)
     var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
     var h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);

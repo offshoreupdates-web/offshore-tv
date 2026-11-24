@@ -17,7 +17,7 @@ import java.io.FileNotFoundException;
  * Guarded by android.permission.DUMP, which only the adb shell and the system hold, so other apps can't use it.
  */
 public class ConfigDrop extends ContentProvider {
-    // tidy.json: the owner's Tidy up choice (setup_tv.ps1 reads it); tidy_done.json: what setup_tv.ps1 switched off.
+    // tidy.json: the user's Tidy up choice (setup_tv.ps1 reads it); tidy_done.json: what setup_tv.ps1 switched off.
     private static final String[] NAMES = {"tv.json", "sync.json", "alert_test.json", "tidy.json", "tidy_done.json"};
 
     private File file(Uri u) throws FileNotFoundException {

@@ -9,7 +9,7 @@ import java.net.Socket;
 import java.net.URI;
 
 /**
- * Radio stations that only stream unencrypted (owner, 23 November 2026: "unencrypted radio is fine", radio only).
+ * Radio stations that only stream unencrypted (radio only).
  * The app allows no cleartext, so the page and Android's player can't open an http:// station. This relay fetches
  * the one station chosen (a public internet address, checked after the name is looked up) and passes the audio on at
  * http://127.0.0.1:port/token, the only cleartext address the app allows (res/xml/network_security_config.xml).

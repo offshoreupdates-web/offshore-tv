@@ -18,7 +18,7 @@ import java.net.URL;
 import java.security.MessageDigest;
 
 /**
- * Updates from the owner's site (Settings > Updates & about). FEED is a small file the owner uploads with each release:
+ * Updates from Offshore's update site (Settings > Updates & about). FEED is a small file the maintainer uploads with each release:
  *   {"version": "0.12", "notes": ["...", "..."], "apk": "https://<same site>/offshore-0.12.apk", "sha256": "<hex>"}
  * Before Fire TV's install prompt appears, the download must: come from the feed's own site over https, match the
  * sha256 in the feed, be this same app signed with this same key, and be newer than what's installed. Android checks

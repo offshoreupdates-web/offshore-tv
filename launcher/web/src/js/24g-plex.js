@@ -1,5 +1,5 @@
-  // Plex on Keep watching (owner, 24 November 2026: "we want the plex link as long as its secure"). The Plex app doesn't
-  // tell Fire TV what it plays, so Settings › Home screen › Keep watching › Plex links the owner's Plex account with Plex's own TV
+  // Plex on Keep watching. The Plex app doesn't
+  // tell Fire TV what it plays, so Settings › Home screen › Keep watching › Plex links the user's Plex account with Plex's own TV
   // sign-in (a code entered at plex.tv/link on a phone; the password never comes near the TV) and Plex.java reads
   // Continue watching from their servers. The page only ever gets titles, progress and small pictures (no token).
   var PLEX = { code: "", state: "", timer: 0, at: 0, sure: false, demo: 0 };

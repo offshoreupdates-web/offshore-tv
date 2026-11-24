@@ -185,7 +185,7 @@
     var side = function (t) { return { id: t.abbrev, abbr: t.abbrev, logo: t.logo, score: t.score }; };
     return game(l, g.id, state, detail.trim(), new Date(g.startTimeUTC).getTime(), side(g.awayTeam), side(g.homeTeam));
   }
-  // One card per favourite team (owner: "follow the team without showing too much"): record and standing, then the
+  // One card per favourite team: record and standing, then the
   // live score during a game, otherwise the last result and the next game, whenever it is. Live teams first.
   function myTeams() {
     return PREFS.teams.filter(function (k) {

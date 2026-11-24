@@ -1,4 +1,4 @@
-  /* Sports scores: under the beach row when that's on (owner's choice), otherwise in its place at the top. */
+  /* Sports scores: under the beach row when that's on, otherwise in its place at the top. */
   .toprow { transition: opacity .6s var(--ease); }
   .toprow.off { opacity: 0; }
   #scores.below { top: 178px; }

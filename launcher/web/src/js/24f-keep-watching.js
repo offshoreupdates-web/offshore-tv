@@ -1,8 +1,7 @@
-  // Home extras, part 2 (owner, 23 November 2026): Keep watching, your own cards and your own app pictures.
+  // Home extras, part 2: Keep watching, your own cards and your own app pictures.
   //
   // Keep watching: a shelf over the app tiles with what you had on lately: the show or film you were watching in your
-  // own apps (Plex, Fox One, Netflix…: whatever they tell Android is playing, with where you stopped; owner, 23 November
-  // 2026), Live TV channels, radio stations and videos opened from Files (Settings › Home screen › Keep watching › Every app you open adds
+  // own apps (Plex, Fox One, Netflix…: whatever they tell Android is playing, with where you stopped), Live TV channels, radio stations and videos opened from Files (Settings › Home screen › Keep watching › Every app you open adds
   // every recently used app, or turns it off). Fire OS keeps apps' own "continue watching" lists to themselves, so a
   // card opens the app, which picks up from there. Newest first, up to 10, a month at most. ☰ or hold OK: Remove; it comes back if
   // you play it again. Your cards follow on the same shelf.
@@ -93,8 +92,7 @@
   var shelfEl = document.getElementById("shelf"), shelfRow = document.getElementById("shelfRow"), kwTimer = 0;
   function kwBuildSoon() { clearTimeout(kwTimer); kwTimer = setTimeout(kwBuild, 300); }
   function shelfOn() { return KW.items.length > 0; }
-  // Over the app you're on (Settings › Home screen › Keep watching › Shows up, the default; owner, 24 November 2026: "only
-  // show up when you're over that specific app"): the row holds what you had on in the highlighted app (Plex's shows
+  // Over the app you're on (Settings › Home screen › Keep watching › Shows up, the default): the row holds what you had on in the highlighted app (Plex's shows
   // over Plex, channels over Live TV, stations over Radio, videos over Files); over an app with none, your cards. The
   // app name glides down when the app you're on has nothing on the row.
   function kwOwnerOf(e) { return e.k === "tv" ? LIVETV_ID : e.k === "radio" ? RADIO_ID : e.k === "file" ? "files" : e.pkg || e.id; }
@@ -125,7 +123,7 @@
     if (!KW.items.length) KW.focus = false;
     // kw-any: something is on the shelf somewhere (the clock panel is sized to leave its room, so it never resizes as you
     // move). has-shelf: something is on it for this app, so the app name slides up over it; with nothing for the app
-    // you're on, the row fades and the name slides back down (owner: "fixes itself when you're not over an app").
+    // you're on, the row fades and the name slides back down.
     document.body.classList.toggle("kw-any", kw.length + cards.length > 0);
     document.body.classList.toggle("has-shelf", KW.items.length > 0);
     shelfEl.classList.toggle("empty", !KW.items.length);

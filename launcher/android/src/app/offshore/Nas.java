@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Network folder (Customize > Backgrounds > Network folder): a share on the owner's NAS over SMB2/3 (smbj) or NFSv3
+ * Network folder (Customize > Backgrounds > Network folder): a share on the user's NAS over SMB2/3 (smbj) or NFSv3
  * (nfs-client). The NAS decides what the TV may do: SMB with the user and password typed on the TV (a read-only user,
  * plus write on one folder to keep downloads there), NFS by allowing the TV's address on the export. The settings,
  * password included, live only in this app's private preferences, never in tv.json or the page's storage.

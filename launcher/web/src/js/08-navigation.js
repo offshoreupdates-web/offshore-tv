@@ -154,14 +154,14 @@
     if (action === "ok") open(); else move(action);
   };
 
-  // Ambient mode: after 15 idle minutes (owner's choice) the controls fade out and a large clock, the date and the
+  // Ambient mode: after 15 idle minutes the controls fade out and a large clock, the date and the
   // weather remain. The Fire TV screensaver and sleep timer still apply as set in Fire TV settings.
   var idleTimer = 0, ambient = false;
   function idleMs() { return (+new URLSearchParams(location.search).get("ambient") || PREFS.ambient) * 1000; }   // ?ambient=10: preview after 10 s
   function wake() {
     pauseIdle();
     if (!idleMs()) return;              // Settings > Ambient mode: Off
-    idleTimer = setTimeout(function () { if (NPF && NPF.open) npfClose(); ambient = true;   // music playing or not, the screensaver comes at its time (owner)
+    idleTimer = setTimeout(function () { if (NPF && NPF.open) npfClose(); ambient = true;   // music playing or not, the screensaver comes at its time
        renderCal(); feedsStart(); document.body.classList.add("ambient"); fitSaverSoon(); }, idleMs());
   }
 
