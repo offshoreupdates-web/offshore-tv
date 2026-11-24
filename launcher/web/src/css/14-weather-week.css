@@ -1,0 +1,23 @@
+  /* Weather glass: Up from the apps focuses it, OK opens the week (NWS 7-day forecast). */
+  .clock { transition: transform .18s var(--ease); }
+  .clock.focus { transform: scale(1.04); border-color: rgba(255,255,255,.85); box-shadow: inset 0 1.5px 0 #fff, 0 14px 34px rgba(0,0,0,.35), 0 0 28px rgba(255,255,255,.22); }
+  .light .clock.focus { border-color: rgba(0,0,0,.55); }
+  .wdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 30px; padding-top: 26px; border-top: 1px solid rgba(255,255,255,.16); min-height: 300px; }
+  .wd { text-align: center; }
+  .wd .dn { font-size: 24px; font-weight: 600; }
+  .wd svg { display: block; width: 56px; height: 56px; margin: 16px auto 12px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .wd .hi { font-size: 40px; font-weight: 500; min-height: 48px; }
+  .wd .lo { font-size: 28px; color: var(--text-2); }
+  .wd .pp { font-size: 20px; color: #64d2ff; margin-top: 10px; min-height: 26px; }
+  .wd .tx { font-size: 19px; color: var(--text-2); margin-top: 4px; }
+  .wdays .msg { grid-column: 1 / -1; font-size: 30px; color: var(--text-2); text-align: center; padding-top: 90px; }
+  .light .sysdim { background: rgba(0,0,0,.25); }
+  .sys .k { font-size: 18px; font-weight: 500; letter-spacing: 2.4px; text-transform: uppercase; color: rgba(255,255,255,.55); }
+  .sys .v { font-size: 32px; font-weight: 400; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sys .wide { grid-column: 1 / -1; }
+  .sys .v .warn { color: #ff9f0a; }
+  .sys .foot { margin-top: 32px; font-size: 22px; color: var(--text-2); }
+  .sysdim { position: absolute; inset: 0; background: rgba(0,0,0,.45); opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity .25s, visibility 0s linear .25s; }
+  .sysdim.open { opacity: 1; visibility: visible; transition-delay: 0s; }
+

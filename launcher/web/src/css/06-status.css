@@ -1,0 +1,23 @@
+  /* Status box (bottom right, like Control Center): network, VPN and notifications, then the latest notices. */
+  /* (the status box is the right-hand zone of the bottom bar; see "Bottom bar") */
+  .st-row { display: flex; justify-content: space-between; align-items: center; }
+  .chip { display: flex; align-items: center; gap: 9px; font-size: 21px; font-weight: 500; color: rgba(255,255,255,.5); white-space: nowrap; }
+  .chip svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .chip.on { color: #fff; }
+  .chip.green { color: #30d158; }
+  .chip.red { color: #ff453a; }
+  .chip .n { min-width: 26px; height: 26px; padding: 0 7px; border-radius: 13px; background: var(--accent); color: #fff; font-size: 17px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center; }
+  /* Notifications: their own glass card floating above the right end of the bottom bar (the bar never grows). */
+  .st-list { position: absolute; right: 100px; bottom: 108px; width: 480px; padding: 14px 18px; border-radius: 26px; display: flex; flex-direction: column; gap: 10px; }
+  .st-list:empty { display: none; }
+  .nr { display: flex; align-items: center; gap: 12px; }
+  .nr .dot { flex: none; width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; }
+  .nr .dot svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .nr img { flex: none; width: 80px; height: 45px; border-radius: 9px; object-fit: cover; }
+  .nr .tx { flex: 1; min-width: 0; }
+  .nr .t { font-size: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nr .m { font-size: 19px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nr .tm { flex: none; align-self: flex-start; margin-top: 3px; font-size: 17px; color: rgba(255,255,255,.5); }
+
+

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Lockdown: no inline event handlers, plugins, frames, forms or <base> tricks, so text that ever slipped into markup can't run. -->
+<meta http-equiv="Content-Security-Policy" content="script-src 'unsafe-inline'; script-src-attr 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Offshore</title>
+<style>
+@@CSS@@
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg" id="bgA"></div>
+  <div class="bg" id="bgB"></div>
+  <video id="bgVid" muted playsinline preload="auto" aria-hidden="true"></video><div id="bgShade" aria-hidden="true"></div>
+  <div id="wxfx" aria-hidden="true"><i class="fx1"></i><i class="fx2"></i><i class="fx3"></i><b></b></div>
+
+  <div id="ssDim"></div>
+  <div id="frame">
+  <div class="beach toprow" id="beach" aria-label="Beach conditions"></div>
+  <div class="beach toprow off" id="scores" aria-label="Sports scores"></div>
+
+  <div id="ui">
+    <div class="clock glass frost">
+      <div class="time" id="time"></div>
+      <div class="date" id="date"></div>
+      <div class="weather" id="weather"><span id="wIcon"></span><span class="temp" id="wTemp"></span><span id="wText"></span></div>
+      <div class="wmore" id="wMore"></div>
+      <div class="place" id="wPlace"></div>
+      <div class="wstale" id="wStale" role="status"></div>
+      <div class="air" id="wAir"></div>
+      <div class="air cnext" id="wNext"></div>
+      <div class="cweek" id="cWeek" aria-hidden="true"></div>
+    </div>
+
+    <div class="hero"><h1 id="name"></h1><p id="line"></p></div>
+    <!-- Keep watching and your cards (24f): a shelf over the app tiles, only when there's something on it. -->
+    <div class="shelf" id="shelf" role="list"><div class="shelf-row" id="shelfRow"></div></div>
+
+    <div class="tiles" id="tiles" role="list"><div class="grid" id="grid"></div></div>
+    <div class="rowdots" id="rowdots" aria-hidden="true"></div>
+    <div class="pills" id="pills" role="list"></div>
+
+    <div class="hint" aria-hidden="true">
+      <span><kbd>◀ ▶</kbd><i data-t="Choose">Choose</i></span>
+      <span><kbd>OK</kbd><i data-t="Open">Open</i></span>
+      <span><kbd>⌂</kbd><i data-t="Come back here">Come back here</i></span>
+    </div>
+  </div>
+
+  <!-- Screensaver modules. "Over the photo" keeps them in these homes; the smart mirror moves each into the zone chosen in
+       Settings > Screensaver > Layout (applyLayout). -->
+  <div class="mirror" id="mLeft" aria-hidden="true">
+    <div class="mod" data-m="clock"><div class="mtime" id="mTime"></div><div class="mdate" id="mDate"></div></div>
+    <div class="mod" data-m="weather"><div class="mwx" id="mWx"></div><div class="msc" id="mWxMore"></div><div class="msc mair" id="mAir"></div><div class="mat" id="mWxAt"></div></div>
+    <div class="mod" data-m="outdoor"><div class="msc" id="mOut"></div></div>
+    <div class="mod" data-m="music"><div class="msc" id="mMusic"></div></div>
+    <div class="mod" data-m="teams"><div id="mScores"></div></div>
+    <div class="mod" data-m="agenda"><div class="magenda" id="mAgenda"></div></div>
+  </div>
+  <div class="mright" id="mRight" aria-hidden="true">
+    <div class="mod" data-m="week"><div class="mcal" id="mCal"></div></div>
+    <div class="mod" data-m="markets"><div class="mmkt" id="mMkt"></div></div>
+  </div>
+  <div class="mod" data-m="greeting" id="mGreetHome"><div class="mgreet" id="mGreet" aria-hidden="true"></div></div>
+  <div class="mod" data-m="news" id="mNewsHome"><div class="mnews" id="mNews" aria-hidden="true"><div class="src"></div><div class="hd"></div></div></div>
+  <div class="mod" data-m="beach" id="mBeachHome"><div class="beach mbeach" id="mBeach"></div></div>
+  <div class="mz tl" id="zTL"></div><div class="mz tr" id="zTR"></div><div class="mz bl" id="zBL"></div><div class="mz br" id="zBR"></div><div class="mz c" id="zC"></div>
+
+  <div class="alert glass" id="alert" role="status">
+    <div class="ic" id="aIc"><svg viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.5h.01"/></svg></div>
+    <div><div class="ev" id="aEv"></div><div class="sub" id="aSub"></div><div class="sub ado" id="aDo"></div></div>
+  </div>
+  <!-- Screensaver: the most serious alert in the middle of the mirror; life-threatening warnings fill the screen. -->
+  <div class="ssalert" id="ssAlert" role="alert"><i id="ssaBar"></i><div class="ssa-k" id="ssaK"></div><div class="ssa-ev" id="ssaEv"></div>
+    <div class="ssa-sub" id="ssaSub"></div><div class="ssa-do" id="ssaDo"></div><div class="ssa-at" id="ssaAt"></div></div>
+  <!-- One bar along the bottom: controls on the left (music, Bluetooth, sharing, mirroring), status on the right
+       (network, VPN, notifications; OK opens the System panel). Notifications float in their own card above it. -->
+  <div class="bar glass" id="bar">
+    <div class="dock" id="dock" role="list" aria-label="Music, Bluetooth, sharing and mirroring">
+      <div class="chip dchip" id="dMusic"></div><div class="chip dchip" id="dBt"></div><div class="chip dchip" id="dShare"></div><div class="chip dchip" id="dFiles"></div><div class="chip dchip" id="dMirror"></div><div class="chip dchip" id="dSleep"></div>
+    </div>
+    <div class="bar-div" aria-hidden="true"></div>
+    <div class="status" id="status">
+      <div class="st-row"><div class="chip" id="cNet"></div><div class="chip" id="cVpn"></div><div class="chip" id="cBell"></div></div>
+    </div>
+  </div>
+  <div class="st-list glass" id="notices" role="log" aria-live="polite"></div>
+  <div class="credit" id="credit"></div>
+  </div>
+  <div id="sleepShade"></div>
+  <div id="wxEmergency" role="alert"><div class="we-k">Emergency alert · National Weather Service</div><h1 id="weEv"></h1>
+    <p class="we-do" id="weDo"></p><div class="we-sub" id="weSub"></div><div class="we-at" id="weAt"></div></div>
+  <!-- Full-screen Now playing (24e): the cover large over a blurred copy of itself, or the radio station playing. -->
+  <div id="npf" aria-live="polite"><div class="npf-bg"><canvas id="npfBlur" width="24" height="14"></canvas></div><div class="npf-shade"></div>
+    <div class="npf-clock" id="npfClock"></div>
+    <div class="npf-in" id="npfIn"><div class="npf-art" id="npfArt"></div>
+      <div class="npf-tx"><div class="npf-k" id="npfK"></div><div class="npf-t" id="npfT"></div><div class="npf-a" id="npfA"></div><div class="npf-s" id="npfS"></div>
+        <div class="npf-prog" id="npfProg"><div class="track"><div class="fill" id="npfBar"></div></div><div class="times"><span id="npfPos"></span><span id="npfDur"></span></div></div></div></div>
+    <div class="npf-hint" id="npfHint"></div></div>
+  <div class="sysdim" id="sysdim"></div>
+  <div class="sys glass frost" id="sys" role="dialog" aria-label="Notifications and system"><h2>Notifications &amp; System</h2>
+    <div class="acts"><div class="sbtn glass" id="bClear"></div><div class="sbtn glass" id="bPause"></div><div class="sbtn glass" id="bCust"></div></div>
+    <div class="acts" id="maint"></div>
+    <div class="grid" id="sysGrid"></div>
+    <div class="foot">▲ ▼ ◀ ▶ choose · OK select · Back to close</div></div>
+  <div class="sys glass frost" id="cust" role="dialog" aria-label="Settings"><h2>Settings</h2><div class="crows" id="crows"></div>
+    <div class="foot">▲ ▼ choose · ◀ ▶ change · Back to close</div></div>
+  <div class="sys glass frost" id="week" role="dialog" aria-label="Weather this week"><h2 id="weekTitle">This week</h2>
+    <div class="wdays" id="wdays"></div>
+    <div class="foot" data-t="National Weather Service forecast · OK or Back to close">National Weather Service forecast · OK or Back to close</div></div>
+  <div class="sys glass frost" id="shareAsk" role="dialog" aria-label="Receive from phone"><h2 id="saTitle"></h2>
+    <div class="sa-sub" id="saSub"></div>
+    <div class="acts" id="saActs"><div class="sbtn glass" id="saYes">Accept</div><div class="sbtn glass" id="saNo">Decline</div></div>
+    <div class="foot" id="saFoot"></div></div>
+  <div class="sys glass frost" id="dcard" role="dialog"><h2 id="dcTitle"></h2><div id="dcBody"></div>
+    <div id="dcActs"></div><div class="foot" id="dcFoot"></div></div>
+  <div class="sys glass frost" id="files" role="dialog" aria-label="Files">
+    <div class="fm-head"><h2>Files</h2><div class="fm-sum" id="fmSum"></div></div>
+    <div class="fm-bar" id="fmBar"></div><div class="fm-legend" id="fmLegend"></div>
+    <div class="fm-body"><div class="fm-places" id="fmPlaces"></div>
+      <div class="fm-main"><div class="fm-path" id="fmPath"></div><div class="fm-cols" id="fmCols"></div><div class="fm-list" id="fmList"></div></div></div>
+    <div class="fm-info" id="fmInfo"></div><div class="foot" id="fmFoot"></div>
+    <div class="fm-pop glass" id="fmPop" role="dialog"></div></div>
+  <div class="sys glass frost" id="livetv" role="dialog" aria-label="Live TV">
+    <div class="fm-head"><h2>Live TV</h2><div class="fm-sum" id="ltSum"></div></div>
+    <div class="fm-body"><div class="fm-places" id="ltGroups"></div>
+      <div class="fm-main"><div class="fm-path" id="ltPath"></div><div class="fm-list" id="ltList"></div></div></div>
+    <div class="fm-info" id="ltInfo"></div><div class="foot" id="ltFoot"></div>
+    <div class="fm-pop glass" id="ltPop" role="dialog"></div></div>
+  <div class="sys glass frost" id="radio" role="dialog" aria-label="Radio">
+    <div class="fm-head"><h2>Radio</h2><div class="fm-sum" id="rdSum"></div></div>
+    <div class="fm-body"><div class="fm-places" id="rdGroups"></div>
+      <div class="fm-main"><div class="fm-path" id="rdPath"></div><div class="fm-list" id="rdList"></div></div></div>
+    <div class="fm-info" id="rdInfo"></div><div class="foot" id="rdFoot"></div>
+    <div class="fm-pop glass" id="rdPop" role="dialog"></div></div>
+  <div class="viewer" id="viewer"><img id="vImg" alt=""><div class="cap" id="vCap"></div></div>
+  <!-- First run: a few calm screens (one question each), then a short tour with a spotlight on the real home screen. -->
+  <div id="setup" role="dialog" aria-label="Welcome to Offshore"><div class="su-glow"></div><div class="su-card" id="suCard"></div><div class="su-dots" id="suDots"></div>
+    <div class="su-help"><span><kbd>▲ ▼ ◀ ▶</kbd>move</span><span><kbd>●</kbd>middle button to choose</span><span><kbd>↩</kbd>back</span></div></div>
+  <div id="tourRing" aria-hidden="true"></div>
+  <div class="tour-tip glass frost" id="tourTip" role="dialog"><div class="tt-n" id="ttN"></div><h3 id="ttH"></h3><p id="ttP"></p><div class="tt-acts" id="ttActs"></div></div>
+  <div class="nbanner glass frost" id="nBanner" role="status" aria-live="polite"></div>
+  <div class="hpick glass frost" id="homePick" role="dialog" aria-label="Home screen layout"><div class="hp-k">Home screen layout</div>
+    <div class="hp-row" id="hpRow"></div><div class="hp-desc" id="hpDesc"></div><div class="hp-foot">◀ ▶ try · OK keep · Back undo</div></div>
+  <div class="toast glass" id="toast"></div>
+</div>
+
+<script>
+@@JS@@
+</html>

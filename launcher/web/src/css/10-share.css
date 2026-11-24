@@ -1,0 +1,22 @@
+  /* Receive from phones: the accept card, the code, and a full-screen viewer for received photos. */
+  .previewing .sysdim { opacity: 0 !important; }
+  .asking #cust, .asking #sys, .asking #week, .asking #dcard { visibility: hidden; }
+  .sa-sub { font-size: 30px; color: var(--text-2); margin-top: 14px; line-height: 1.35; }
+  .sa-sub b { color: var(--text); font-weight: 500; }
+  .sa-code { font-size: 96px; font-weight: 300; letter-spacing: 18px; text-align: center; margin: 26px 0 6px; font-variant-numeric: tabular-nums; }
+  .dc-code { text-align: center; margin: 26px 0 4px; padding: 18px 0 8px; border-top: 1px solid rgba(255,255,255,.12); }
+  .dc-code span { font-size: 22px; color: var(--text-2); letter-spacing: .4px; }
+  .dc-code .sa-code { margin: 6px 0 0; font-size: 84px; }
+  #shareAsk .acts { margin-top: 34px; }
+  .viewer { position: absolute; inset: 0; background: #000; display: none; }
+  .viewer.open { display: block; }
+  .viewer img { width: 100%; height: 100%; object-fit: contain; }
+  .viewer .cap { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); padding: 12px 30px; border-radius: 30px;
+    background: rgba(0,0,0,.6); font-size: 24px; color: rgba(255,255,255,.85); white-space: nowrap; }
+  .kbdisp { font-size: 48px; font-weight: 300; text-align: center; margin: 6px 0 22px; min-height: 60px; white-space: nowrap; overflow: hidden; }
+  .kbdisp.empty { color: var(--text-2); font-size: 34px; line-height: 60px; }
+  .kbgrid { grid-template-columns: repeat(10, 82px); gap: 12px; }
+  .kbgrid .zipkey { height: 62px; font-size: 28px; }
+  .kbgrid .zipkey.on { color: var(--accent); }
+  .credit { position: absolute; left: 800px; width: 500px; bottom: 6px; text-align: center; font-size: 15px; color: rgba(255,255,255,.5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 8px rgba(0,0,0,.6); }

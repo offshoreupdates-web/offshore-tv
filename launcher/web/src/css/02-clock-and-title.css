@@ -1,0 +1,97 @@
+  /* Time, date, weather on a glass card. */
+  .clock { position: absolute; top: 48px; right: 100px; text-align: right; padding: 26px 34px 24px; border-radius: 34px; }
+  .clock .time { font-size: 64px; font-weight: 500; letter-spacing: -1px; line-height: 1; }
+  .clock .date { font-size: 28px; color: var(--text-2); margin-top: 10px; }
+  .weather { display: none; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 16px; font-size: 30px; }
+  .weather.on { display: flex; }
+  .weather svg { width: 46px; height: 46px; fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .weather .temp { font-size: 42px; font-weight: 500; }
+  .place { font-size: 26px; color: var(--text-2); margin-top: 6px; }
+  .wmore { font-size: 24px; color: var(--text-2); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; margin-left: auto; }
+  .clock-left .wmore { margin-left: 0; }
+  .wmore:empty { display: none; }
+  .wstale { display: none; font-size: 21px; color: #ffd60a; margin-top: 6px; }
+  .wstale.on { display: block; }
+  .mat { font-size: 20px; color: rgba(255,255,255,.42); margin-top: 10px; letter-spacing: .2px; }
+  .mat.stale { color: #ffd60a; }
+  #mWxMore:empty, .mat:empty { display: none; }
+  .alert .ado { color: var(--text); margin-top: 6px; max-width: 640px; }
+  .alert .ado:empty { display: none; }
+  /* Screensaver alert: a calm dark card in the middle of the mirror with a coloured edge; never blurred (cheap). */
+  .ambient #alert { opacity: 0; visibility: hidden; }
+  .ssalert { position: absolute; left: 50%; top: 50%; width: 1040px; margin-left: -520px; transform: translateY(-50%); z-index: 6;
+    padding: 30px 40px 28px 52px; border-radius: 32px; background: rgba(10,10,14,.94);   /* solid enough that the mirror's text behind it doesn't show through */ border: 1.5px solid rgba(255,255,255,.12);
+    box-shadow: 0 30px 80px rgba(0,0,0,.45); opacity: 0; visibility: hidden; transition: opacity 1s var(--ease), visibility 0s linear 1s; overflow: hidden; }
+  .ambient .ssalert.on { opacity: 1; visibility: visible; transition-delay: 0s; }
+  .ssalert i { position: absolute; left: 0; top: 0; bottom: 0; width: 12px; }
+  .ssa-k { font-size: 20px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,.55); }
+  .ssa-ev { font-size: 52px; font-weight: 600; letter-spacing: -.8px; margin-top: 8px; line-height: 1.1; }
+  .ssa-sub { font-size: 28px; color: rgba(255,255,255,.7); margin-top: 10px; }
+  .ssa-do { font-size: 30px; line-height: 1.4; margin-top: 18px; }
+  .ssa-do:empty { display: none; }
+  .ssa-at, .we-at { font-size: 20px; color: rgba(255,255,255,.42); margin-top: 18px; }
+  .ssa-at.stale, .we-at.stale { color: #ffd60a; }
+  .ssalert.minor { width: 820px; margin-left: -410px; padding: 22px 32px 20px 44px; }
+  .ssalert.minor .ssa-ev { font-size: 38px; }
+  .ssalert.minor .ssa-sub { font-size: 24px; }
+  .has-alert.ambient .mgreet { opacity: 0 !important; visibility: hidden !important; }
+  .has-alert.ambient .mz, .has-alert.ambient #beach, .has-alert.ambient .mirror, .has-alert.ambient .mright { opacity: .22 !important; transition: opacity 1s var(--ease); }
+  .has-alert.minor-alert.ambient .mz, .has-alert.minor-alert.ambient #beach, .has-alert.minor-alert.ambient .mirror, .has-alert.minor-alert.ambient .mright { opacity: .4 !important; }
+  /* Life-threatening warning on the screensaver: the whole screen, big plain words, no animation. */
+  #wxEmergency { position: absolute; inset: 0; z-index: 30; display: none; flex-direction: column; justify-content: center; padding: 0 180px;
+    background: radial-gradient(1600px 900px at 50% 0%, rgba(255,69,58,.30), transparent 70%), #0d0304; border-top: 14px solid #ff453a; }
+  .ambient #wxEmergency.on { display: flex; }
+  .we-k { font-size: 24px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; color: #ff6b61; }
+  #wxEmergency h1 { font-size: 120px; font-weight: 700; letter-spacing: -2.5px; line-height: 1.02; margin-top: 18px; }
+  .we-do { font-size: 46px; line-height: 1.4; margin-top: 34px; max-width: 1500px; }
+  .we-sub { font-size: 34px; color: rgba(255,255,255,.75); margin-top: 34px; }
+  .we-at { font-size: 24px; }
+  /* Air quality (EPA AirNow): a coloured dot by category, then "Air 36 · Good". */
+  .air { display: none; align-items: center; justify-content: flex-end; gap: 10px; font-size: 24px; color: var(--text-2); margin-top: 6px; }
+  .air.on { display: flex; }
+  .clock-left .air { justify-content: flex-start; }
+  .air i, .mair i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; }
+  .mair { display: flex; align-items: center; gap: 12px; }
+  .mz.tr .mair, .mz.br .mair { justify-content: flex-end; }
+  .mz.c .mair { justify-content: center; }
+  .mair:empty, .no-air #wAir, .no-air .mair { display: none; }
+  /* Calendar: a dot under days with events, the next event in the clock panel, and Up next on the screensaver. */
+  .cweek .evd { width: 7px; height: 7px; border-radius: 50%; margin-top: -1px; }
+  .mcal .evd { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: middle; }
+  .cnext { max-width: 400px; color: var(--text); }
+  .cnext span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .magenda:empty { display: none; }
+  .magenda { max-width: 760px; }
+  .magenda .mh { font-size: 19px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--text-2); margin-bottom: 6px; }
+  .magenda .ag { display: flex; align-items: center; gap: 14px; padding: 5px 0; font-size: 26px; white-space: nowrap; }
+  .magenda .ag i { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+  .magenda .ag .w { color: var(--text-2); font-size: 23px; min-width: 150px; }
+  .magenda .ag .t { overflow: hidden; text-overflow: ellipsis; }
+  .mz.tr .magenda .ag, .mz.br .magenda .ag { flex-direction: row-reverse; }
+  .wd .wev { font-size: 17px; line-height: 1.25; color: var(--text); margin-top: 6px; max-width: 128px; display: flex; gap: 6px; align-items: flex-start; text-align: left; }
+  .wd .wev span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .wd .wev i { width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 6px; }
+  /* The week in the clock panel (Settings > Home screen): seven small columns under a hairline, today on a pill. */
+  .cweek { display: none; gap: 2px; justify-content: flex-end; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.16); }
+  .cweek.on { display: flex; }
+  .cweek .c { width: 52px; padding: 8px 0 9px; border-radius: 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .cweek .c.today { background: rgba(255,255,255,.16); }
+  .cweek .n { font-size: 17px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--text-2); }
+  .cweek .c.today .n { color: var(--text); }
+  .cweek .d { font-size: 24px; font-weight: 500; line-height: 1; }
+  .cweek svg { width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .cweek .h { font-size: 19px; color: var(--text-2); }
+  .light .cweek { border-top-color: rgba(0,0,0,.12); }
+  .light .cweek .c.today { background: rgba(0,0,0,.08); }
+  .light .cweek svg { stroke: #111; }
+
+  /* Title and description sit just above the tiles (bottom-anchored, so a two-line description grows upward). */
+  /* The name and line above the tiles stop well short of the clock panel (it starts about 1370px in): one line for the
+     name, at most two for the line. With the clock on the left they sit to its right instead. */
+  .hero { position: absolute; left: var(--safe-x); bottom: 334px; width: 1150px; text-shadow: 0 2px 16px rgba(0,0,0,.7); }
+  .hero h1 { font-size: 84px; font-weight: 700; letter-spacing: -1.8px; line-height: 1.02; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hero p { font-size: 34px; color: var(--text-2); margin-top: 10px; line-height: 1.3; max-width: 1080px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .clock-left:not(.no-clock) .hero { left: 704px; width: 1096px; }   /* lined up with the third tile */
+
+

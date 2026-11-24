@@ -1,0 +1,78 @@
+  /* App tiles: rows of up to 5 big tiles (one row) or 6 smaller ones (more apps). Two rows show at a time;
+     beyond that the rows glide up as you move down, and rows out of view fade away (Apple TV style). */
+  .tiles { position: absolute; left: var(--safe-x); top: 606px; }
+  .grid { transition: transform .45s var(--ease); }
+  .trow { display: flex; gap: var(--gap); transition: opacity .35s var(--ease); }
+  .tile.far { opacity: .4; }           /* outside the five-tile window: a dimmed peek at the edge */
+  .trow + .trow { margin-top: 44px; }
+  .trow.out { opacity: 0; }
+  .tiles.compact .tile > :not(img) { zoom: .84; }   /* preview wordmarks shrink with the tile */
+  .rowdots { position: absolute; right: 86px; display: none; flex-direction: column; gap: 14px; }
+  .rowdots.on { display: flex; }
+  .rowdots i { width: 10px; height: 10px; border-radius: 5px; background: rgba(255,255,255,.32); transition: background .3s; }
+  .rowdots i.on { background: #fff; }
+  /* Tiles are always solid (owner: the photo showed through unfocused banners and washed them out). Unfocused ones sit
+     under a soft dark veil that lifts on focus, like tvOS; only opacity and transform animate (no repaints). */
+  .tile { width: var(--tile-w); height: var(--tile-h); border-radius: 20px; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center; background-color: #1c1c1e;
+    border: 1.5px solid rgba(255,255,255,.14);           /* hairline rim */
+    box-shadow: 0 16px 34px rgba(0,0,0,.45);              /* static: animating shadows repaints every frame */
+    transition: transform .2s var(--ease), opacity .2s var(--ease); will-change: transform; }
+  .tile::before { /* the veil over unfocused tiles */
+    content: ""; position: absolute; inset: 0; z-index: 1; background: rgba(8,10,14,.34); transition: opacity .2s var(--ease); }
+  .tile::after { /* glass sheen, like a tvOS focused icon */
+    content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit;
+    background: linear-gradient(160deg, rgba(255,255,255,.26) 0%, rgba(255,255,255,0) 42%); opacity: 0; transition: opacity .2s var(--ease); }
+  .tile.focus { transform: translateY(-8px) scale(1.12); border-color: rgba(255,255,255,.7); }
+  .tile.focus::before { opacity: 0; }
+  /* Arranging (☰): the tile being moved floats higher with an accent ring; pinned tiles wear a small pin. */
+  .tile.moving { transform: translateY(-22px) scale(1.12); border-color: rgba(var(--accent-rgb),1); box-shadow: 0 0 0 4px rgba(var(--accent-rgb),.7), 0 28px 50px rgba(0,0,0,.5); }
+  .arranging .tile:not(.moving) { opacity: .55; }
+  .tile .pinb { position: absolute; top: 10px; right: 10px; z-index: 3; width: 34px; height: 34px; border-radius: 17px; background: rgba(var(--accent-rgb),.95);
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+  .tile .pinb svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .tile.focus::after { opacity: 1; }
+  .tile img.banner { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  /* Wordmark tiles for the preview; on the TV the real app banners replace them. */
+  .b-plex    { background: linear-gradient(135deg, #2a2d31, #15171a); }
+  .b-plex span { font-size: 92px; font-weight: 800; letter-spacing: -3px; }
+  .b-plex b  { color: #e5a00d; }
+  .b-prime   { background: linear-gradient(135deg, #1aa3e8, #0b6aa8); flex-direction: column; }
+  .b-prime span { font-size: 48px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+  .b-prime i { display: block; width: 128px; height: 18px; margin: 2px 0 0 40px; border-bottom: 4px solid #fff; border-radius: 0 0 50% 50%; }
+  .b-netflix { background: linear-gradient(135deg, #1c1c1c, #050505); }
+  .b-netflix span { font-size: 68px; font-weight: 900; color: #e50914; letter-spacing: -2px; transform: scaleY(1.22); }
+  .b-kodi    { background: linear-gradient(135deg, #21a8e0, #0d5f88); }
+  .b-kodi span { font-size: 66px; font-weight: 800; letter-spacing: 6px; }
+  .b-nord    { background: linear-gradient(135deg, #4a7dff, #1d3db8); }
+  .b-nord span { font-size: 50px; font-weight: 600; letter-spacing: -1px; }
+  .b-spectrum { background: linear-gradient(135deg, #1b5fae, #0a2c5c); }
+  /* Live TV (Offshore's own tile): a calm deep-blue glass with a small live dot, in the style of the other tiles. */
+  .b-livetv { background: linear-gradient(135deg, #1d2b4a, #0b1222); }
+  .b-livetv span { display: inline-flex; align-items: center; gap: 14px; font-size: 50px; font-weight: 700; letter-spacing: -1px; }
+  .b-livetv span i { width: 16px; height: 16px; border-radius: 8px; background: #ff375f; box-shadow: 0 0 14px rgba(255,55,95,.7); }
+  .b-radio { background: linear-gradient(135deg, #3a1d4a, #120b22); }
+  .b-radio span { display: inline-flex; align-items: center; gap: 14px; font-size: 50px; font-weight: 700; letter-spacing: -1px; }
+  .b-radio span i { width: 16px; height: 16px; border-radius: 8px; background: #ff9f0a; box-shadow: 0 0 14px rgba(255,159,10,.7); }
+  .b-spectrum span { font-size: 54px; font-weight: 700; letter-spacing: -1px; }
+  .b-peacock { background: linear-gradient(135deg, #1e1e1e, #000); }
+  .b-peacock span { font-size: 60px; font-weight: 800; letter-spacing: -2px; }
+  .b-peacock b { color: #f9b31b; }
+  .b-hulu    { background: linear-gradient(135deg, #15171c, #08090b); }
+  .b-hulu span { font-size: 86px; font-weight: 900; letter-spacing: -3px; color: #1ce783; }
+  .b-youtube { background: linear-gradient(135deg, #262626, #0e0e0e); gap: 14px; }
+  .b-youtube i { width: 64px; height: 46px; border-radius: 13px; background: #ff0033; position: relative; }
+  .b-youtube i::after { content: ""; position: absolute; left: 25px; top: 13px; border-left: 19px solid #fff; border-top: 10px solid transparent; border-bottom: 10px solid transparent; }
+  .b-youtube span { font-size: 46px; font-weight: 700; letter-spacing: -2px; }
+  .b-appletv { background: linear-gradient(135deg, #3a3a3c, #111113); }
+  .b-appletv span { font-size: 54px; font-weight: 600; letter-spacing: -1px; }
+  .b-breeze  { background: linear-gradient(135deg, #12b5a6, #08746c); }
+  .b-breeze span { font-size: 50px; font-weight: 600; letter-spacing: -1px; }
+  .b-foxone  { background: linear-gradient(135deg, #1b1d24, #07080b); }
+  .b-foxone span { font-size: 54px; font-weight: 800; letter-spacing: 1px; }
+  .b-disney  { background: linear-gradient(135deg, #0f2a5c, #071433); }
+  .b-disney span { font-size: 58px; font-weight: 600; letter-spacing: -1px; }
+  .b-app     { background: linear-gradient(135deg, rgba(255,255,255,.22), rgba(255,255,255,.08)); }
+  .b-app span { font-size: 40px; font-weight: 600; padding: 0 20px; text-align: center; line-height: 1.15; }
+

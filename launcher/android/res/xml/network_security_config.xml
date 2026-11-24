@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- No unencrypted connections, except the TV's own loopback address, where RadioRelay passes on a radio station
+     that only streams unencrypted (owner, 23 November 2026). Nothing else in the app can use cleartext. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

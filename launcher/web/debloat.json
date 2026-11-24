@@ -1,0 +1,48 @@
+{
+  "about": "Tidy up Fire TV: the Amazon extras Offshore may offer to switch off. One list, used by the app (Settings and setup, to show the choices and whether each is on) and by tools/setup_tv.ps1 (which only ever touches packages listed in 'items', never one matching 'never'). Switching off is pm disable-user (reversible, nothing is uninstalled). Only items installed on a TV are shown there, so one list serves every Fire TV model. Add a package only after trying it on a real TV; when unsure, leave it out.",
+  "version": 1,
+  "groups": [
+    { "id": "promo",    "label": "Shopping and promotions" },
+    { "id": "apps",     "label": "Amazon apps you may not use" },
+    { "id": "tips",     "label": "Tutorials and tips" },
+    { "id": "privacy",  "label": "Tracking and diagnostics" }
+  ],
+  "items": [
+    { "pkg": "com.amazon.shoptv.client",            "group": "promo",   "suggest": true,  "name": "Amazon shopping",  "what": "Shopping on the TV." },
+    { "pkg": "com.amazon.shoptv.firetv.client",     "group": "promo",   "suggest": true,  "name": "Amazon shopping (TV screens)", "what": "The TV screens for Amazon shopping." },
+    { "pkg": "com.amazon.minitv.android.app",       "group": "promo",   "suggest": true,  "name": "Amazon miniTV",    "what": "A video service only offered in India." },
+    { "pkg": "com.amazon.gamehub",                  "group": "promo",   "suggest": true,  "name": "Games hub",        "what": "Game and Luna promotions. Controllers still pair in Fire TV Settings." },
+    { "pkg": "com.amazon.cloud9",                   "group": "apps",    "suggest": true,  "name": "Silk browser",     "what": "Amazon's web browser. Leave it on if you browse the web on the TV." },
+    { "pkg": "com.amazon.bueller.photos",           "group": "apps",    "suggest": true,  "name": "Amazon Photos",    "what": "Amazon's photo app. Offshore's own photos and Files don't need it." },
+    { "pkg": "com.amazon.storm.lightning.tutorial", "group": "tips",    "suggest": true,  "name": "First-run tutorial", "what": "Amazon's welcome tutorial." },
+    { "pkg": "com.amazon.tmm.tutorial",             "group": "tips",    "suggest": true,  "name": "Tips overlay",     "what": "Pop-up tips over Amazon's screens." },
+    { "pkg": "com.amazon.tv.releasenotes",          "group": "tips",    "suggest": false, "name": "Fire TV release notes", "what": "Shows what's new after a Fire OS update." },
+    { "pkg": "com.amazon.tv.acr",                   "group": "privacy", "suggest": true,  "name": "Viewing recognition", "what": "Recognises what's on screen to personalise Amazon's suggestions and ads." },
+    { "pkg": "com.amazon.dp.logger",                "group": "privacy", "suggest": false, "name": "Device logger",    "what": "Sends diagnostic logs to Amazon. If an app misbehaves, switch it back on." },
+    { "pkg": "com.amazon.logan",                    "group": "privacy", "suggest": false, "name": "Log uploader",     "what": "Uploads logs to Amazon. If an app misbehaves, switch it back on." },
+    { "pkg": "com.amazon.perfc",                    "group": "privacy", "suggest": false, "name": "Performance reports", "what": "Measures and reports performance to Amazon." },
+    { "pkg": "com.amazon.perfcollection",           "group": "privacy", "suggest": false, "name": "Performance collection", "what": "Collects performance data for Amazon." },
+    { "pkg": "com.amazon.tv.fw.metrics",            "group": "privacy", "suggest": false, "name": "Usage metrics",    "what": "Reports how the TV is used." },
+    { "pkg": "com.amazon.wirelessmetrics.service",  "group": "privacy", "suggest": false, "name": "Wi-Fi metrics",    "what": "Reports Wi-Fi statistics to Amazon." }
+  ],
+  "never": [
+    "app.offshore", "com.amazon.firebat",
+    "com.amazon.tv.launcher", "com.amazon.firehomestarter", "com.amazon.tv.intentsupport",
+    "com.amazon.tv.settings", "com.amazon.tv.quicksettings", "com.amazon.device.settings", "com.android.settings",
+    "com.amazon.tv.ime",
+    "com.amazon.fireinputdevices", "com.amazon.device.bluetooth", "com.amazon.device.blepa", "com.amazon.autopairservice",
+    "com.amazon.accessoryconfigservice", "com.amazon.tv.keypolicymanager", "com.amazon.tv.avrcpclient",
+    "com.amazon.vizzini", "com.amazon.alexa", "com.amazon.alexadirectivebrokerservice", "com.amazon.alexamediaplayer",
+    "amazon.speech", "com.amazon.tv.alexa", "com.amazon.firetv.androidskillconnectioncapability", "com.ivona", "com.amazon.ale", "com.amazon.aca",
+    "com.amazon.whad", "com.amazon.whasettings", "com.amazon.wha", "com.amazon.audiohome",
+    "com.amazon.tv.devicecontrol", "com.amazon.tv.inputpreference", "com.amazon.tv.routing", "com.amazon.tv.resolutioncycler",
+    "com.amazon.avsyncslider", "com.droidlogic", "com.amazon.tifobserver",
+    "com.amazon.venezia", "com.amazon.android.marketplace", "com.amazon.appaccesskeyprovider", "com.amazon.application.compatibility",
+    "com.amazon.device.software.ota", "com.amazon.tv.forcedotaupdater", "com.amazon.tv.easyupgrade",
+    "com.amazon.dcp", "com.amazon.identity", "com.amazon.device.sync", "com.amazon.sync", "com.amazon.tv.oobe",
+    "com.amazon.ftv.profilepicker", "com.amazon.tv.consents", "com.amazon.securitysyncclient",
+    "com.amazon.prism", "com.amazon.providers", "com.amazon.cast", "com.amazon.dialservice", "com.amazon.awvflingreceiver",
+    "com.amazon.whisperplay", "com.amazon.whisperlink", "com.amazon.webview", "com.amazon.tv.livetv", "com.amazon.franktvinput",
+    "com.amazon.ftvads.deeplinking", "android", "com.android"
+  ]
+}

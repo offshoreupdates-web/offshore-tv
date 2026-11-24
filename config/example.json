@@ -1,0 +1,12 @@
+{
+  "room": "Living room",
+  "first": "com.netflix.ninja",
+  "apps": ["com.netflix.ninja", "com.amazon.firebat", "com.amazon.firetv.youtube", "com.plexapp.android"],
+  "hide": [],
+  "weather": { "units": "fahrenheit" },
+  "alerts": {
+    "token": "replace-with-a-long-random-string",
+    "ntfy": { "server": "https://ntfy.sh", "topic": "" }
+  },
+  "updates": ""
+}

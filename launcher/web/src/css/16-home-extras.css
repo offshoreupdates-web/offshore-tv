@@ -1,0 +1,94 @@
+  /* Home extras, 0.17 (js/24e-home-extras.js): weather on the background, the big clock, the lighter home and
+     full-screen Now playing. Only transform and opacity animate, so the GPU moves ready-drawn layers. */
+
+  /* Weather on the background: two layers of a 512 px tile (far and near) sliding down, slanted for rain. */
+  #wxfx { position: absolute; inset: 0; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 3s ease; }
+  #wxfx.on { opacity: 1; }
+  #wxfx i { position: absolute; left: -15%; right: -15%; top: -512px; bottom: -512px; background-repeat: repeat; display: none; will-change: transform; }
+  #wxfx b { position: absolute; inset: 0; display: none; background: #dfe8ff; opacity: 0; }
+  #wxfx.fx-rain i.fx1, #wxfx.fx-rain i.fx2, #wxfx.fx-storm i.fx1, #wxfx.fx-storm i.fx2, #wxfx.fx-snow i.fx1, #wxfx.fx-snow i.fx2 { display: block; }
+  #wxfx.fx-rain i, #wxfx.fx-storm i { transform-origin: 50% 50%; }
+  #wxfx.fx-rain i.fx1, #wxfx.fx-storm i.fx1 { animation: fxRainFar 1.15s linear infinite; opacity: .55; }
+  #wxfx.fx-rain i.fx2, #wxfx.fx-storm i.fx2 { animation: fxRainNear .7s linear infinite; opacity: .75; }
+  #wxfx.fx-rain-light i.fx1 { opacity: .35; } #wxfx.fx-rain-light i.fx2 { opacity: .4; animation-duration: .85s; }
+  #wxfx.fx-rain-heavy i.fx1, #wxfx.fx-storm i.fx1 { opacity: .8; } #wxfx.fx-rain-heavy i.fx2, #wxfx.fx-storm i.fx2 { opacity: 1; animation-duration: .55s; }
+  @keyframes fxRainFar { from { transform: rotate(9deg) translateY(0); } to { transform: rotate(9deg) translateY(512px); } }
+  @keyframes fxRainNear { from { transform: rotate(9deg) translateY(0); } to { transform: rotate(9deg) translateY(512px); } }
+  #wxfx.fx-snow i.fx1 { animation: fxSnowFar 26s linear infinite; opacity: .7; }
+  #wxfx.fx-snow i.fx2 { animation: fxSnowNear 14s linear infinite; opacity: .9; }
+  #wxfx.fx-snow-heavy i.fx1 { animation-duration: 18s; } #wxfx.fx-snow-heavy i.fx2 { animation-duration: 9s; }
+  @keyframes fxSnowFar { from { transform: translate(0, 0); } to { transform: translate(-60px, 512px); } }
+  @keyframes fxSnowNear { from { transform: translate(0, 0); } to { transform: translate(80px, 512px); } }
+  /* Fog: two soft banks drifting past each other, low on the screen where fog sits. */
+  #wxfx.fx-fog i.fx1, #wxfx.fx-fog i.fx2 { display: block; top: 30%; bottom: -10%; left: -60%; right: -60%;
+    background: radial-gradient(40% 45% at 30% 70%, rgba(225,230,238,.5), transparent 70%), radial-gradient(35% 40% at 75% 60%, rgba(225,230,238,.42), transparent 70%); }
+  #wxfx.fx-fog i.fx1 { animation: fxFogA 70s ease-in-out infinite alternate; }
+  #wxfx.fx-fog i.fx2 { top: 10%; opacity: .7; animation: fxFogB 95s ease-in-out infinite alternate; }
+  @keyframes fxFogA { from { transform: translateX(-12%); } to { transform: translateX(12%); } }
+  @keyframes fxFogB { from { transform: translateX(10%); } to { transform: translateX(-10%); } }
+  /* Storms: now and then a soft flash, never a strobe (two quick pulses, then 14 s of nothing). */
+  #wxfx.fx-storm b { display: block; animation: fxFlash 16s linear infinite; }
+  @keyframes fxFlash { 0%, 86%, 89.5%, 100% { opacity: 0; } 87% { opacity: .16; } 88% { opacity: .02; } 88.7% { opacity: .1; } }
+  /* Out of sight (an app is open), during the screensaver's mirror and with Reduced motion: still. */
+  .away #wxfx *, .calm #wxfx *, .ambient.ss-mirror #wxfx { animation-play-state: paused !important; }
+  .calm #wxfx b, .ambient.ss-mirror #wxfx { display: none; }
+
+  /* Big clock: the time large and thin, straight on the photo, like a lock screen. White in light mode too (it sits on
+     the photo, not on glass), with a soft shadow so it reads on a bright sky. */
+  .clock-big #ui .clock { background: none; border-color: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+    padding: 6px 10px 10px; color: #fff; --text: #fff; --text-2: rgba(255,255,255,.86); text-shadow: 0 2px 18px rgba(0,0,0,.45), 0 1px 3px rgba(0,0,0,.35); }
+  .clock-big #ui .clock .time { font-size: 168px; font-weight: 200; letter-spacing: -5px; line-height: .92;
+    background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,.93) 55%, rgba(236,242,255,.78) 100%); -webkit-background-clip: text; background-clip: text;
+    color: transparent; text-shadow: none; filter: drop-shadow(0 4px 22px rgba(0,0,0,.35)); }
+  .clock-big #ui .clock .date { font-size: 34px; font-weight: 500; margin-top: 6px; letter-spacing: .2px; }
+  .clock-big #ui .clock .weather svg { stroke: #fff; filter: drop-shadow(0 1px 3px rgba(0,0,0,.4)); }
+  .clock-big #ui .clock.focus { transform: none; background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.5); border-radius: 30px; }
+  .light.clock-big #ui .clock .wmore, .light.clock-big #ui .clock .place, .light.clock-big #ui .clock .air { color: rgba(255,255,255,.86); }
+
+  /* Lighter home: no blur, no shine, simpler shadows, quicker moves, no weather layer. */
+  .lite .frost { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .lite .glass:not(.focus) { background: linear-gradient(180deg, rgba(40,43,50,.86), rgba(26,28,34,.82)); }
+  .light.lite .glass:not(.focus) { background: linear-gradient(180deg, #fbfbfd, #eef0f4); }
+  .lite .tile::after { display: none; }
+  .lite .tile { box-shadow: 0 8px 18px rgba(0,0,0,.4); transition-duration: .12s; }
+  .lite #wxfx { display: none; }
+
+  /* Full-screen Now playing. */
+  #npf { position: absolute; inset: 0; z-index: 40; background: #05060a; opacity: 0; visibility: hidden; overflow: hidden;
+    transition: opacity .5s var(--ease), visibility 0s linear .5s; }
+  #npf.open { opacity: 1; visibility: visible; transition-delay: 0s; }
+  .npf-bg { position: absolute; inset: -120px; }
+  /* The soft backdrop costs nothing: the cover drawn once into a 24 x 14 canvas, then stretched (smooth scaling does
+     the blur; no blur filter runs). */
+  .npf-bg canvas { width: 100%; height: 100%; filter: saturate(1.5) brightness(.6); opacity: 0; transition: opacity .8s var(--ease); }
+  .npf-bg canvas.on { opacity: 1; }
+  #npf.noart .npf-bg { background: radial-gradient(70% 80% at 30% 40%, rgba(var(--accent-rgb),.55), transparent 70%),
+    radial-gradient(60% 70% at 85% 80%, rgba(var(--accent-rgb),.25), transparent 70%), #07080d; }
+  #npf.noart .npf-bg canvas { display: none; }
+  .npf-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.25), rgba(0,0,0,.05) 50%, rgba(0,0,0,.35)); }
+  .npf-clock { position: absolute; top: 56px; right: 96px; font-size: 40px; font-weight: 500; color: rgba(255,255,255,.85); }
+  .npf-in { position: absolute; left: 160px; right: 160px; top: 0; bottom: 0; display: flex; align-items: center; gap: 90px; transition: transform 2s var(--ease); }
+  .npf-art { flex: none; width: 600px; height: 600px; border-radius: 28px; overflow: hidden; background: rgba(255,255,255,.08);
+    box-shadow: 0 40px 90px rgba(0,0,0,.55), 0 0 0 1.5px rgba(255,255,255,.12); display: flex; align-items: center; justify-content: center;
+    font-size: 150px; font-weight: 700; letter-spacing: -4px; color: #fff; transform: scale(.94); transition: transform .6s var(--ease); }
+  #npf.open .npf-art { transform: scale(1); }
+  .npf-art img { width: 100%; height: 100%; object-fit: cover; }
+  .npf-art.radio { width: 420px; height: 420px; border-radius: 210px; font-size: 96px; letter-spacing: -2px; background: linear-gradient(160deg, rgba(var(--accent-rgb),.9), rgba(var(--accent-rgb),.45)); }
+  .npf-art.radio img { object-fit: contain; padding: 70px; background: #fff; }
+  .npf-art.none img { display: none; }
+  .npf-tx { min-width: 0; flex: 1; }
+  .npf-k { font-size: 26px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,.6); display: flex; align-items: center; gap: 14px; }
+  #npf.live .npf-k::before { content: ""; width: 14px; height: 14px; border-radius: 7px; background: #ff453a; box-shadow: 0 0 14px rgba(255,69,58,.8); animation: npfLive 2s ease-in-out infinite; }
+  @keyframes npfLive { 50% { opacity: .35; } }
+  .npf-t { font-size: 76px; font-weight: 700; letter-spacing: -1.6px; line-height: 1.05; margin-top: 18px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .npf-a { font-size: 42px; color: rgba(255,255,255,.8); margin-top: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .npf-s { font-size: 26px; color: rgba(255,255,255,.5); margin-top: 18px; }
+  .npf-s:empty { display: none; }
+  .npf-prog { display: none; margin-top: 44px; max-width: 880px; }
+  .npf-prog.on { display: block; }
+  .npf-prog .track { height: 8px; border-radius: 4px; background: rgba(255,255,255,.2); overflow: hidden; }
+  .npf-prog .fill { height: 100%; background: rgba(255,255,255,.92); transform-origin: 0 50%; transform: scaleX(0); transition: transform 1s linear; }
+  .npf-prog .times { display: flex; justify-content: space-between; font-size: 24px; color: rgba(255,255,255,.55); margin-top: 12px; font-variant-numeric: tabular-nums; }
+  .npf-hint { position: absolute; left: 0; right: 0; bottom: 60px; text-align: center; font-size: 24px; color: rgba(255,255,255,.6); opacity: 0; transition: opacity .6s var(--ease); }
+  .npf-hint.on { opacity: 1; }

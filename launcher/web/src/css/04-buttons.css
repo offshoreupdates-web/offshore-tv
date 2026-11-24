@@ -1,0 +1,19 @@
+  /* Bottom row: pills, then smaller utility buttons. */
+  .pills { position: absolute; left: var(--safe-x); top: 846px; display: flex; gap: 24px; align-items: center; }
+  .pill { height: 76px; padding: 0 38px 0 30px; border-radius: 38px; display: flex; align-items: center; gap: 16px;
+    font-size: 32px; font-weight: 500; color: var(--text);
+    transition: transform .18s var(--ease); will-change: transform; }   /* colours switch instantly (cheap) */
+  .pill svg { width: 36px; height: 36px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* Focused glass turns bright and solid, like a lit tvOS control. */
+  .pill.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); color: #111; transform: scale(1.08);
+    border-color: rgba(255,255,255,.9); box-shadow: inset 0 1.5px 0 #fff, 0 14px 34px rgba(0,0,0,.35), 0 0 28px rgba(255,255,255,.25); }
+
+  .hint { position: absolute; left: var(--safe-x); bottom: 50px; font-size: 28px; color: var(--text-2); display: flex; gap: 30px; align-items: center; }
+  .hint kbd { font: inherit; display: inline-flex; align-items: center; justify-content: center; min-width: 46px; height: 46px; padding: 0 10px;
+    border-radius: 23px; color: #fff; margin-right: 10px; font-size: 24px;
+    background: rgba(255,255,255,.14); border: 1.5px solid rgba(255,255,255,.3); box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+
+  .toast { position: absolute; left: 50%; top: 80px; transform: translateX(-50%); padding: 22px 40px; border-radius: 40px;
+    background: rgba(30,30,34,.55); font-size: 32px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+

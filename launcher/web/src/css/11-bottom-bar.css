@@ -1,0 +1,69 @@
+  /* Bottom bar (owner: one organized section): controls on the left (Music, Bluetooth, Share, Mirror), a hairline, then
+     status on the right (network, VPN, notifications). Each item is a stop on the bottom row after the buttons.
+     Premium without blur (blur costs the Cube's GPU on every crossfade frame): a deeper glass, a lit top edge, and
+     Control Center style round icons that fill with colour when active (green: playing, blue: on / connected). */
+  .bar { position: absolute; left: 776px; right: 100px; bottom: 26px; height: 66px; padding: 0 7px; border-radius: 34px; display: flex; align-items: center; gap: 4px;
+    background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.07)); border-color: rgba(255,255,255,.26);
+    box-shadow: inset 0 1.5px 0 rgba(255,255,255,.45), inset 0 -1px 0 rgba(0,0,0,.15), 0 16px 40px rgba(0,0,0,.30); }
+  .dock { display: flex; gap: 8px; flex: none; }
+  .bar-div { flex: none; width: 1px; height: 30px; margin: 0 8px 0 auto; background: rgba(255,255,255,.22); }
+  .status { flex: none; height: 50px; padding: 0 16px; border-radius: 28px; display: flex; align-items: center; transition: transform .18s var(--ease); }
+  .status .st-row { gap: 22px; }
+  .status .chip { font-size: 18px; gap: 8px; letter-spacing: .1px; }      /* the same size as the controls' names */
+  .status .chip svg { width: 22px; height: 22px; }
+  .status.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); transform: scale(1.05);
+    box-shadow: 0 10px 26px rgba(0,0,0,.35), 0 0 24px rgba(255,255,255,.22); }
+  .status.focus .chip { color: rgba(0,0,0,.55); }
+  .status.focus .chip.on { color: #111; }
+  .status.focus .chip.green { color: #1f9d48; }
+  .status.focus .chip.red { color: #d70015; }
+  .status.focus .chip.purple { color: #8e44c9; }
+  .light .bar-div { background: rgba(0,0,0,.14); }
+  .dchip { flex: none; justify-content: center; padding: 5px 12px 5px 5px; border-radius: 28px; overflow: hidden; font-size: 18px; gap: 8px;
+    color: rgba(255,255,255,.82); transition: transform .18s var(--ease); }
+  .dchip .well { flex: none; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,.14); box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+  .dchip svg { width: 21px; height: 21px; flex: none; stroke-width: 2.1; }
+  .dchip span { overflow: hidden; text-overflow: ellipsis; letter-spacing: .1px; }
+  .dchip.green, .dchip.blue { color: #fff; }
+  .dchip.green .well { background: linear-gradient(180deg, #3ddc68, #28b950); box-shadow: 0 2px 10px rgba(48,209,88,.45); }
+  .dchip.blue .well { background: var(--accent); box-shadow: 0 2px 10px rgba(var(--accent-rgb),.45); }
+  .dchip#dMusic { justify-content: flex-start; }
+  .dock.playing .dchip#dMusic { width: 340px; }           /* room for the song; the others shrink to icons */
+  .dchip#dBt { max-width: 190px; }
+  /* Playing: the Music chip holds the song; the others shrink to icons (their names return on focus). */
+  .dock.playing .dchip:not(#dMusic):not(.focus) span, .dock.compact .dchip:not(#dMusic):not(.focus) span { display: none; }
+  .dock.playing .dchip:not(#dMusic):not(.focus), .dock.compact .dchip:not(#dMusic):not(.focus) { padding-right: 5px; }
+  /* Icons only and nothing playing: Music is an icon like the others, its name shows on focus (owner). */
+  .dock.compact:not(.playing) #dMusic:not(.focus) span { display: none; }
+  .dock.compact:not(.playing) #dMusic:not(.focus) { padding-right: 5px; }
+  #dMusic.playnow .well { border-radius: 12px; overflow: hidden; }
+  #dMusic.playnow .well img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #dMusic.playnow { padding-left: 3px; }
+  #dMusic.playnow .well.cover { width: 44px; height: 44px; border-radius: 10px; background: #222; box-shadow: 0 3px 10px rgba(0,0,0,.45); }   /* the album cover, untinted */
+  .dchip { height: 50px; }                                  /* one height whatever the chip shows: the dock never grows */
+  #dMusic .dm { display: flex; flex-direction: column; justify-content: center; min-width: 0; flex: 1; line-height: 1.12; }
+  #dMusic .dm b, #dMusic .dm em { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #dMusic .dm b { font-size: 16px; font-weight: 600; color: #fff; }
+  #dMusic .dm em { font-style: normal; font-size: 13px; font-weight: 400; color: rgba(255,255,255,.65); }
+  #dMusic .dm u { display: block; height: 2px; margin-top: 4px; border-radius: 1px; background: rgba(255,255,255,.22); overflow: hidden; }
+  #dMusic .dm s { display: block; height: 100%; background: #fff; transform-origin: left; transform: scaleX(0); transition: transform 10s linear; }
+  #dMusic.focus .dm b { color: #111; }
+  #dMusic.focus .dm em { color: rgba(0,0,0,.55); }
+  #dMusic.focus .dm u { background: rgba(0,0,0,.15); }
+  #dMusic.focus .dm s { background: #111; }
+  .light .dchip { color: rgba(0,0,0,.75); }
+  .light .dchip.green, .light .dchip.blue { color: #111; }
+  .light #dMusic .dm b { color: #111; }
+  .light #dMusic .dm em { color: rgba(0,0,0,.55); }
+  .light #dMusic .dm u { background: rgba(0,0,0,.12); }
+  .light #dMusic .dm s { background: #111; }
+  .light .dchip .well { background: rgba(0,0,0,.07); }
+  .credit { left: 776px; width: auto; right: 100px; }
+  .dchip.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); color: #111; transform: scale(1.07);
+    box-shadow: 0 10px 26px rgba(0,0,0,.35), 0 0 24px rgba(255,255,255,.22); }
+  .dchip.focus .well { background: rgba(0,0,0,.08); box-shadow: none; }
+  .dchip.focus.green .well { background: linear-gradient(180deg, #3ddc68, #28b950); }
+  .dchip.focus.blue .well { background: linear-gradient(180deg, #2b93ff, #0a74e6); }
+  .dchip.focus.green .well svg, .dchip.focus.blue .well svg { stroke: #fff; }
+  .light .dchip.focus { background: #1c1c1e; color: #fff; }

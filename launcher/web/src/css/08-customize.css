@@ -1,0 +1,24 @@
+  /* Settings sheet: a list of settings; ▲▼ choose, ◀ ▶ / OK change, Back closes. */
+  .crows { margin-top: 26px; display: flex; flex-direction: column; gap: 6px; }
+  .crow { display: flex; justify-content: space-between; align-items: center; height: 70px; padding: 0 30px; border-radius: 35px;
+    font-size: 28px; font-weight: 500; transition: transform .15s var(--ease); }
+  .crow .val { color: var(--text-2); font-weight: 400; }
+  .crow .val::before { content: "‹  "; opacity: .45; }
+  .crow .val::after { content: "  ›"; opacity: .45; }
+  .crow.act .val::before, .crow.act .val::after { content: ""; }
+  .crow.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); color: #111; transform: scale(1.02); }
+  .crow.focus .val { color: #333; }
+  .hide-beach #beach { display: none !important; }
+
+  /* Appearance and Home screen: the panel steps to the right and the dimming goes, so the home shows each change as
+     it's made (js/23-customize.js, custLive). Slid with transform, so it animates like opening. */
+  .cust-live #cust.open { width: 720px; transform: translate(176px, -50%); }
+  body.cust-live:not(.light) #cust { background: rgba(20,24,30,.62); }
+  body.cust-live.light #cust { background: rgba(250,250,252,.78); }
+  .cust-live .sysdim { opacity: 0 !important; }
+  .cust-live #cust .foot .fh { height: 90px; }
+  .cust-live #cust h2 { font-size: 36px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* In Appearance the big name over the tiles would still name the status box: it steps aside (Home screen keeps it,
+     since its settings arrange it). */
+  .cust-look .hero { opacity: 0; transition: opacity .3s var(--ease); }
+  .cust-live.cust-left #cust.open { transform: translate(-896px, -50%); }

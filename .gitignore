@@ -1,0 +1,28 @@
+# Built apps and the generated page
+apks/
+launcher/web/index.html
+
+# Signing keys: never commit these
+*.keystore
+*.jks
+
+# Downloaded toolchain (tools\setup_toolchain.ps1 fetches it)
+tools/jdk/
+tools/android-sdk/
+tools/platform-tools/
+tools/libs/*.jar
+
+# Your own TVs' settings (only config/example.json belongs in the repo)
+config/*.json
+!config/example.json
+tv.json
+ip.txt
+
+# Logs and local output
+after/
+before/
+*.log
+
+# Private: the developer's own notes (home, TVs, test logs) and published release files (they live on the update site)
+HANDOFF.md
+release/

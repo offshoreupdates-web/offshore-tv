@@ -1,0 +1,22 @@
+Background photos from Wikimedia Commons (Featured / Quality images and similar), used under the licenses shown.
+Downscaled and cropped to 1920x1080 with readability shading added (tools\make_backgrounds.ps1). Licenses: CC BY / CC BY-SA require this credit.
+
+ocean-01.jpg  "Storm Cloud Sunset.jpg" by Charles Patrick Ewing, CC BY 2.0. https://commons.wikimedia.org/wiki/File:Storm_Cloud_Sunset.jpg
+ocean-02.jpg  "198 Granite rock in La Digue Island at sunset Photo by Giles Laurent.jpg" by Giles Laurent, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:198_Granite_rock_in_La_Digue_Island_at_sunset_Photo_by_Giles_Laurent.jpg
+ocean-03.jpg  "Cote D'Or Beach - Anse Volbert - Praslin - Seychelles.jpg" by NorbertNagel, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:Cote_D%27Or_Beach_-_Anse_Volbert_-_Praslin_-_Seychelles.jpg
+ocean-04.jpg  "Sunset at Naples Beach, Florida.jpg" by daniel rengel, CC BY-SA 2.0. https://commons.wikimedia.org/wiki/File:Sunset_at_Naples_Beach,_Florida.jpg
+ocean-05.jpg  "Island lagoon in Bacuit Bay, El Nido, Palawan, Philippines.jpg" by Vyacheslav Argenberg, CC BY 4.0. https://commons.wikimedia.org/wiki/File:Island_lagoon_in_Bacuit_Bay,_El_Nido,_Palawan,_Philippines.jpg
+ocean-06.jpg  "Norderney, Strand, Sonnenuntergang -- 2025 -- 9089.jpg" by Dietmar Rabich, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:Norderney,_Strand,_Sonnenuntergang_--_2025_--_9089.jpg
+ocean-07.jpg  "Koh Mak (island), Thailand, Sunset on the beach with palms.jpg" by Vyacheslav Argenberg, CC BY 4.0. https://commons.wikimedia.org/wiki/File:Koh_Mak_(island),_Thailand,_Sunset_on_the_beach_with_palms.jpg
+ocean-08.jpg  "Diamonds Thudufushi Beach and Water Villas, May 2017 -08.jpg" by Martin Falbisoner, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:Diamonds_Thudufushi_Beach_and_Water_Villas,_May_2017_-08.jpg
+ocean-09.jpg  "Sunset in Sanibel.JPG" by cc7824, CC BY-SA 3.0. https://commons.wikimedia.org/wiki/File:Sunset_in_Sanibel.JPG
+ocean-10.jpg  "Agios Prokopios Beach at sunset, Naxos, Greece julesvernex2.jpg" by Jules Verne Times Two, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:Agios_Prokopios_Beach_at_sunset,_Naxos,_Greece_julesvernex2.jpg
+ocean-11.jpg  "Malapascua (island), Tropical beach, Philippines.jpg" by Vyacheslav Argenberg, CC BY 4.0. https://commons.wikimedia.org/wiki/File:Malapascua_(island),_Tropical_beach,_Philippines.jpg
+ocean-12.jpg  "Gulf of Mexico Sunset - Isla Aguada Campeche.jpg" by Bernard DUPONT, CC BY-SA 2.0. https://commons.wikimedia.org/wiki/File:Gulf_of_Mexico_Sunset_-_Isla_Aguada_Campeche.jpg
+ocean-13.jpg  "Havelock Island, Ethereal mangrove tree, Andaman Islands.jpg" by Vyacheslav Argenberg, CC BY 4.0. https://commons.wikimedia.org/wiki/File:Havelock_Island,_Ethereal_mangrove_tree,_Andaman_Islands.jpg
+ocean-14.jpg  "North Sea Sunset, 1807042229, ako.jpg" by Ansgar Koreng, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:North_Sea_Sunset,_1807042229,_ako.jpg
+ocean-15.jpg  "Fisherman at Muzhappilangad Beach.jpg" by Shagil Kannur, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:Fisherman_at_Muzhappilangad_Beach.jpg
+ocean-16.jpg  "Dike - Lazaret 01.jpg" by Christian Ferrer, CC BY 4.0. https://commons.wikimedia.org/wiki/File:Dike_-_Lazaret_01.jpg
+ocean-17.jpg  "Norderney, Fischerboot -- 2025 -- 2772.jpg" by Dietmar Rabich, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:Norderney,_Fischerboot_--_2025_--_2772.jpg
+ocean-18.jpg  "Norderney, Strand -- 2025 -- 9757.jpg" by Dietmar Rabich, CC BY-SA 4.0. https://commons.wikimedia.org/wiki/File:Norderney,_Strand_--_2025_--_9757.jpg
+ocean-19.jpg  "Plage des 3 digues.jpg" by Christian Ferrer, CC BY 4.0. https://commons.wikimedia.org/wiki/File:Plage_des_3_digues.jpg

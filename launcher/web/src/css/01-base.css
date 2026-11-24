@@ -1,0 +1,49 @@
+  /* Designed on a 1920x1080 stage (tvOS canvas) and scaled to fit the screen. */
+  :root {
+    --safe-x: 120px;            /* tvOS keeps content inset from overscan edges */
+    --accent: #0a84ff; --accent-rgb: 10,132,255;   /* Settings › Appearance › Accent colour (applyTheme) */
+    --safe-y: 64px;
+    --tile-w: 256px;            /* six on screen (owner wanted a bit more background showing) */
+    --tile-h: 144px;
+    --gap: 36px;
+    --text: #fff;
+    --text-2: rgba(255,255,255,.78);
+    --ease: cubic-bezier(.2,.8,.2,1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  body { font-family: Roboto, "Segoe UI", system-ui, -apple-system, sans-serif; color: var(--text); -webkit-font-smoothing: antialiased; }
+
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; }
+  /* The stage always covers the whole screen (photo edge to edge, no black bars). On a screen wider than 16:9 it
+     widens and the layout spreads to the edges; on a taller one the 1080 px layout (#frame) sits in the middle. */
+  #frame { position: absolute; left: 0; top: 0; width: 100%; height: 1080px; }
+
+  /* Full-screen photos, cycling with a slow cross-fade. The readability shading is baked into the JPEGs
+     (tools/make_backgrounds.ps1): as a live full-screen gradient layer it caused every missed frame on the Cube. */
+  .bg { position: absolute; inset: 0; background: #000 center/cover no-repeat; opacity: 0; transition: opacity 4s ease-in-out; will-change: opacity; }
+  .bg.on { opacity: 1; }
+  /* Live background: one silent video over the photo layers, with the same readability shading the photos have baked in.
+     While it plays, glass panels stop blurring (re-blurring every video frame would stutter the Cube) and get a little
+     more solid instead. */
+  #bgVid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s ease-in-out; background: transparent; }
+  #bgVid.on { opacity: 1; }
+  #bgShade { position: absolute; inset: 0; display: none; pointer-events: none;
+    background: linear-gradient(90deg, rgba(0,0,0,.50) 0%, rgba(0,0,0,.12) 55%, rgba(0,0,0,.30) 100%), linear-gradient(0deg, rgba(0,0,0,.45) 0%, transparent 40%); }
+  .live-bg #bgShade { display: block; }
+  /* 4K: the video is the TV's own layer behind the page, so the page's own background goes see-through. */
+  html.native-vid, body.native-vid, .native-vid #stage { background: transparent !important; }
+  .native-vid .bg, .native-vid #bgVid { visibility: hidden; }
+  .live-bg .frost { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .live-bg .glass:not(.focus) { background: linear-gradient(180deg, rgba(40,44,52,.72), rgba(22,24,30,.66)); }
+  .light.live-bg .glass:not(.focus) { background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(242,244,248,.84)); }
+
+  /* Apple-style glass: frosted, translucent, lit from the top edge. Only small panels blur (the GPU cost is per pixel). */
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,.08));
+    border: 1.5px solid rgba(255,255,255,.22);
+    box-shadow: inset 0 1.5px 0 rgba(255,255,255,.38), inset 0 -1px 0 rgba(0,0,0,.12), 0 12px 32px rgba(0,0,0,.22);
+  }
+  /* Real frosted blur only where nothing moves (the clock card): it re-blurs only during photo crossfades. */
+  .frost { -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%); }
+

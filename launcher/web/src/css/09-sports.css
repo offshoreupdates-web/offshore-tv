@@ -1,0 +1,47 @@
+  /* Sports scores: under the beach row when that's on (owner's choice), otherwise in its place at the top. */
+  .toprow { transition: opacity .6s var(--ease); }
+  .toprow.off { opacity: 0; }
+  #scores.below { top: 178px; }
+  #scores.below .lbl { font-size: 17px; }
+  #scores.below .val { font-size: 30px; }
+  #scores.below .val img { width: 32px; height: 32px; }
+  .sc .lbl .live { width: 10px; height: 10px; border-radius: 5px; background: #ff453a; display: inline-block; }
+  .sc .val { display: flex; align-items: center; gap: 10px; font-size: 34px; }
+  .sc .val img { width: 36px; height: 36px; object-fit: contain; }
+  .sc .val b { font-weight: 500; }
+  .sc .val .vs { color: rgba(255,255,255,.45); margin: 0 4px; }
+  .sc .val .fav { color: #ffd60a; font-size: 22px; margin-right: -4px; }
+  .sc .val small { margin-left: 14px; }
+  .sc .nx { font-size: 22px; color: var(--text-2); margin-top: 4px; white-space: nowrap; }
+  #scores.below .nx { font-size: 20px; }
+  .msc { font-size: 30px; font-weight: 300; color: var(--text-2); margin-top: 10px; }
+  .msc:first-of-type { margin-top: 22px; }
+  .crow .star { color: #ffd60a; margin-right: 12px; }
+  .crow.save { color: var(--accent); font-weight: 600; }
+  .crow > span:first-child { display: flex; align-items: center; min-width: 0; }
+  .crows.main { gap: 4px; }
+  .crow.info { height: auto; min-height: 40px; padding: 4px 30px; font-size: 20px; font-weight: 400; color: var(--text-2); }
+  /* Section headings inside a list, and soft fades where the list continues. */
+  .crow.head { height: auto; min-height: 0; padding: 18px 30px 6px; margin-top: 4px; font-size: 17px; font-weight: 700; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--text-2); border-top: 1px solid rgba(255,255,255,.1); }
+  .crow.head:first-child { border-top: 0; padding-top: 4px; margin-top: 0; }
+  .crow.head .val::before, .crow.head .val::after { content: ""; }
+  .light .crow.head { border-top-color: rgba(0,0,0,.1); }
+  .crows.fade-bot { -webkit-mask-image: linear-gradient(180deg, #000 82%, transparent); mask-image: linear-gradient(180deg, #000 82%, transparent); }
+  .crows.fade-top { -webkit-mask-image: linear-gradient(0deg, #000 82%, transparent); mask-image: linear-gradient(0deg, #000 82%, transparent); }
+  .crows.fade-top.fade-bot { -webkit-mask-image: linear-gradient(180deg, transparent, #000 14%, #000 84%, transparent); mask-image: linear-gradient(180deg, transparent, #000 14%, #000 84%, transparent); }
+  .crow.info .val::before, .crow.info .val::after { content: ""; }
+  .crows.main .crow { height: 60px; }                       /* the first list holds every folder and Save */
+  .crow .cico { flex: none; width: 40px; height: 40px; border-radius: 11px; margin-right: 18px; display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 2px 6px rgba(0,0,0,.25); }
+  .crow .cico svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  /* Always two lines tall (the longest help is two), so the sheet never grows or re-centers as ▲ ▼ moves. */
+  #cust .foot .fh { font-size: 23px; color: var(--text); opacity: .86; height: 60px; line-height: 1.3; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  #cust .foot .fk { font-size: 18px; color: var(--text-2); margin-top: 6px; opacity: .8; }
+  .zipdisp { font-size: 66px; font-weight: 300; letter-spacing: 10px; text-align: center; margin: 4px 0 18px; }
+  .zipgrid { display: grid; grid-template-columns: repeat(3, 170px); gap: 14px; justify-content: center; }
+  .zipkey { height: 74px; border-radius: 37px; display: flex; align-items: center; justify-content: center; font-size: 34px; transition: transform .15s var(--ease); }
+  .zipkey.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); color: #111; transform: scale(1.06); }
+  .light .zipkey.focus { background: #1c1c1e; color: #fff; }
+  .hint i { font-style: normal; }

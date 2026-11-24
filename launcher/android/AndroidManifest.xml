@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="app.offshore">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Network, Wi-Fi signal and VPN status on the home screen (normal permissions, no prompt). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- Receive from phones (LocalSend): finding phones on the home network (normal permission, no prompt). -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- Customize > Developer access (ADB). Not granted on install: the owner grants it once over ADB if they want the switch. -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <!-- Bluetooth in the dock: which headphones or speakers are connected (normal permission, no prompt). -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <!-- The TV's Bluetooth name follows Customize > This TV > Room ("Living room TV"); normal permission, no prompt. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <!-- Bluetooth and Wi-Fi in Customize: Android only lists nearby devices and networks to apps with location access,
+         asked once with Android's own prompt. Joining a network needs CHANGE_WIFI_STATE (normal). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- Updates from the owner's site (Updater): opens Fire TV's own install prompt for a verified Offshore update.
+         Off until the TV's owner allows it once (tools\setup_tv.ps1: appops REQUEST_INSTALL_PACKAGES allow). -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Hold OK on a tile > Remove app: Android shows its own confirmation. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- After the TV starts: check the Home button is still on (Startup; normal permission, no prompt). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+    <!-- Customize > Task manager: which apps were used recently. Off until the owner allows it once over ADB
+         (adb shell appops set app.offshore GET_USAGE_STATS allow). -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
+    <!-- Close Kodi deletes Kodi's cache in /sdcard/Android/data/org.xbmc.kodi; Files reads the TV's folders and USB
+         drives. Asked once with Android's own prompt the first time Files opens. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- Only this app (same signing key) may send commands to the Home-button service. -->
+    <permission android:name="app.offshore.permission.CMD" android:protectionLevel="signature" />
+    <uses-permission android:name="app.offshore.permission.CMD" />
+
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <application
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:label="Offshore"
+        android:icon="@drawable/icon"
+        android:banner="@drawable/banner"
+        android:theme="@style/Launcher"
+        android:hardwareAccelerated="true"
+        android:allowBackup="false">
+
+        <activity
+            android:name=".MainActivity"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:clearTaskOnLaunch="true"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode|density" />
+
+        <!-- The app's tile in the Amazon menus. An alias so the app can switch it off and on after an update: the Amazon
+             home keeps its own copy of an app's name and banner and only re-reads them when the tile comes back
+             (Home.refreshTile). Everything else opens MainActivity directly. -->
+        <activity-alias
+            android:name=".Entry"
+            android:targetActivity=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Reversible Home button: an accessibility service in the app's process, so it can show the live home
+             screen in an overlay right after Home (see GuestService). -->
+        <service
+            android:name=".GuestService"
+            android:label="@string/guard_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/guest_service" />
+        </service>
+
+        <!-- After the TV starts or Offshore updates: keep the Home button switched on if the owner set it up
+             (GuestService.ensureOn). Both broadcasts are system-only. -->
+        <receiver android:name=".Startup" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- restore_stock.sh asks for the TV's original Bluetooth name back before uninstalling (harmless if anyone else
+             sends it: it only puts back the name the TV had before Offshore). -->
+        <receiver android:name=".NameReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="app.offshore.RESTORE_BT_NAME" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Music controls in the dock: lets the app see what's playing (reads no notifications). Off until the owner
+             enables it (cmd notification allow_listener). -->
+        <service
+            android:name=".MediaListener"
+            android:label="Offshore music controls"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Files > Open: the one file a player or reader app was handed, read-only (FileShare). -->
+        <provider
+            android:name=".FileShare"
+            android:authorities="app.offshore.files"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
+        <!-- tv.json / sync.json / alert_test.json from the computer on Fire OS 8, where adb can't write the app's folder
+             (ConfigDrop). DUMP: only the adb shell and the system hold it, so no other app can write here. -->
+        <provider
+            android:name=".ConfigDrop"
+            android:authorities="app.offshore.config"
+            android:exported="true"
+            android:readPermission="android.permission.DUMP"
+            android:writePermission="android.permission.DUMP" />
+    </application>
+</manifest>

@@ -1,0 +1,168 @@
+  /* System panel (OK on the status box): device and network details on one glass sheet. Back or OK closes it. */
+  /* visibility: hidden when closed, so the frosted blur isn't recomputed behind an invisible panel during photo
+     crossfades (that alone made 89% of crossfade frames miss their deadline on the Cube). */
+  .sys { position: absolute; left: 50%; top: 50%; width: 1040px; transform: translate(-50%, -50%) scale(.96); opacity: 0; pointer-events: none;
+    visibility: hidden; padding: 44px 56px 40px; border-radius: 40px;
+    transition: opacity .25s var(--ease), transform .25s var(--ease), visibility 0s linear .25s; }
+  .sys.open { opacity: 1; transform: translate(-50%, -50%) scale(1); visibility: visible; transition-delay: 0s; }
+  .sys h2 { font-size: 46px; font-weight: 600; letter-spacing: -.5px; }
+  .sys .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 56px; margin-top: 30px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,.16); }
+  .sys .acts { display: flex; gap: 24px; margin-top: 26px; }
+  .sys .acts + .acts { margin-top: 18px; }
+  .sbtn { flex: 1; height: 84px; padding: 0 28px; border-radius: 42px; display: flex; align-items: center; gap: 16px; font-size: 28px; font-weight: 500; white-space: nowrap;
+    transition: transform .18s var(--ease); }
+  .sbtn svg { width: 34px; height: 34px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .sbtn small { margin-left: auto; font-size: 22px; color: var(--text-2); }
+  .sbtn.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); color: #111; transform: scale(1.04);
+    box-shadow: inset 0 1.5px 0 #fff, 0 14px 34px rgba(0,0,0,.35); }
+  .sbtn.focus small { color: #444; }
+  .chip.purple { color: #bf5af2; }
+
+  /* Files (bottom bar): storage at the top, places on the left, the folder on the right. A fixed size, so nothing
+     moves while you browse; the list shows 8 rows and scrolls with the focus. */
+  #files { width: 1640px; height: 900px; padding: 40px 52px 30px; display: flex; flex-direction: column; }
+  /* The full-screen panels (Files, Live TV): the home screen's own cards step away behind them (calmer, and nothing
+     for the GPU to draw), and on a live video background, where glass isn't blurred, the panel is nearly opaque. */
+  body.bigpanel #ui, body.bigpanel #beach, body.bigpanel #bar, body.bigpanel .hint, body.bigpanel #pills { visibility: hidden; }
+  .live-bg #files, .live-bg #livetv, .live-bg #radio { background: linear-gradient(180deg, rgba(36,40,48,.95), rgba(18,20,26,.94)); }
+  .light.live-bg #files, .light.live-bg #livetv, .light.live-bg #radio { background: linear-gradient(180deg, rgba(255,255,255,.97), rgba(242,244,248,.95)); }
+  .fm-head { display: flex; align-items: baseline; justify-content: space-between; gap: 30px; }
+  .fm-sum { font-size: 26px; color: var(--text-2); white-space: nowrap; }
+  .fm-sum b { color: var(--text); font-weight: 600; }
+  .fm-bar { display: flex; height: 16px; margin-top: 20px; border-radius: 8px; overflow: hidden; background: rgba(255,255,255,.14); }
+  .fm-bar i { display: block; height: 100%; min-width: 4px; }
+  .fm-bar i + i { box-shadow: -2px 0 0 rgba(0,0,0,.25); }
+  .fm-legend { display: flex; flex-wrap: wrap; gap: 8px 30px; margin-top: 14px; font-size: 20px; color: var(--text-2); min-height: 28px; }
+  .fm-legend span { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; }
+  .fm-legend em { width: 12px; height: 12px; border-radius: 6px; display: inline-block; }
+  .fm-legend b { color: var(--text); font-weight: 500; }
+  .fm-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 330px 1fr; gap: 34px; margin-top: 24px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,.14); }
+  .fm-places { display: flex; flex-direction: column; gap: 6px; }
+  .fm-pl { display: flex; align-items: center; gap: 16px; height: 62px; padding: 0 22px; border-radius: 31px; font-size: 25px; font-weight: 500; transition: transform .15s var(--ease); }
+  .fm-pl .tx { min-width: 0; }
+  .fm-pl .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fm-pl small { display: block; font-size: 17px; font-weight: 400; color: var(--text-2); margin-top: 1px; white-space: nowrap; }
+  .fm-pl.on { background: rgba(255,255,255,.12); }
+  .fm-pl.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); color: #111; transform: scale(1.03); }
+  .fm-pl.focus small { color: #444; }
+  .fm-ico { flex: none; width: 40px; height: 40px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 2px 6px rgba(0,0,0,.25); }
+  .fm-ico svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .fm-main { min-width: 0; display: flex; flex-direction: column; }
+  .fm-path { font-size: 22px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; height: 32px; }
+  .fm-path b { color: var(--text); font-weight: 600; }
+  .fm-cols, .fm-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) 230px 140px 270px; align-items: center; gap: 0 18px; padding: 0 24px; }
+  .fm-cols { height: 46px; margin-top: 8px; border-radius: 23px; font-size: 17px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); }
+  .fm-cols .sorted { color: var(--text); }
+  .fm-cols .sorted::after { content: " ▾"; letter-spacing: 0; }
+  .fm-cols.focus { background: rgba(255,255,255,.16); color: var(--text); }
+  .fm-list { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+  .fm-row { height: 58px; border-radius: 29px; font-size: 24px; transition: transform .15s var(--ease); }
+  .fm-row .fm-ico { width: 38px; height: 38px; border-radius: 10px; }
+  .fm-row .fm-n { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fm-row .fm-k, .fm-row .fm-d { color: var(--text-2); font-size: 21px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fm-row .fm-s { color: var(--text-2); font-size: 21px; text-align: right; white-space: nowrap; }
+  .fm-row.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); color: #111; transform: scale(1.015); }
+  .fm-row.focus .fm-k, .fm-row.focus .fm-d, .fm-row.focus .fm-s { color: #333; }
+  .fm-empty { padding: 40px 24px; font-size: 26px; color: var(--text-2); line-height: 1.45; }
+  .fm-empty .sbtn { display: inline-flex; flex: none; margin-top: 26px; }
+  .fm-list.fade-bot { -webkit-mask-image: linear-gradient(180deg, #000 85%, transparent); mask-image: linear-gradient(180deg, #000 85%, transparent); }
+  .fm-list.fade-top { -webkit-mask-image: linear-gradient(0deg, #000 85%, transparent); mask-image: linear-gradient(0deg, #000 85%, transparent); }
+  .fm-list.fade-top.fade-bot { -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 86%, transparent); mask-image: linear-gradient(180deg, transparent, #000 12%, #000 86%, transparent); }
+  .fm-info { height: 34px; margin-top: 10px; font-size: 21px; color: var(--text); opacity: .86; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #files .foot { margin-top: 4px; }
+  /* Live TV: the Files layout (groups left, channels right); a monogram per channel instead of downloaded logos. */
+  #livetv, #radio { width: 1640px; height: 900px; padding: 40px 52px 30px; display: flex; flex-direction: column; }
+  #livetv .fm-body, #radio .fm-body { margin-top: 18px; overflow: hidden; }
+  #livetv .fm-places, #radio .fm-places { min-height: 0; overflow: hidden; gap: 4px; }
+  #livetv .fm-pl, #radio .fm-pl { height: 56px; font-size: 24px; }
+  #livetv .fm-pl small, #radio .fm-pl small { display: inline; margin-left: 10px; font-size: 18px; }
+  #livetv .fm-pl .tx, #radio .fm-pl .tx { display: flex; align-items: baseline; min-width: 0; }
+  #livetv .foot, #radio .foot { margin-top: 4px; }
+  /* A guide row: monogram · channel and what's on now (with a thin progress line) · what's next · number. */
+  .lt-row { grid-template-columns: 56px minmax(0, 1.2fr) minmax(0, 1fr) 64px; height: 76px; border-radius: 26px; }
+  .lt-ch { display: flex; flex-direction: column; justify-content: center; min-width: 0; gap: 3px; }
+  .lt-ch .fm-n { font-size: 25px; line-height: 1.15; }
+  .lt-on { font-size: 19px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+  .lt-bar { display: block; width: 62%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.16); overflow: hidden; margin-top: 2px; }
+  .lt-bar i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+  .lt-next { font-size: 19px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lt-next b { font-weight: 600; color: var(--text); margin-right: 6px; }
+  .fm-row.focus .lt-on, .fm-row.focus .lt-next { color: #3a3a3c; }
+  .fm-row.focus .lt-next b { color: #111; }
+  .fm-row.focus .lt-bar { background: rgba(0,0,0,.14); }
+  /* The guide grid: number · channel · the next two hours, with a thin "now" line, like a cable box. */
+  /* The header lines up with the rows: 24px padding + 74px number + 330px channel, then the timeline. */
+  #livetv .fm-path { display: grid; grid-template-columns: 404px 1fr; align-items: end; height: 34px; padding: 0 24px; overflow: visible; }
+  .lt-hn { font-size: 21px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lt-ht { position: relative; height: 26px; }
+  .lt-ht span { position: absolute; top: 0; padding-left: 8px; font-size: 18px; color: var(--text-2); border-left: 1px solid rgba(255,255,255,.18); line-height: 26px; }
+  .lt-g { display: grid; grid-template-columns: 74px 330px 1fr; align-items: center; height: 70px; padding: 0 24px 0 24px; border-radius: 22px; }
+  .lt-g.on { background: rgba(255,255,255,.07); }
+  .lt-num { font-size: 22px; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; }
+  .lt-g.on .lt-num { color: var(--text); }
+  .lt-cn { display: flex; align-items: center; gap: 14px; min-width: 0; padding-right: 14px; }
+  .lt-cn .fm-ico { width: 38px; height: 38px; border-radius: 10px; }
+  .lt-nm { font-size: 23px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .lt-tl { position: relative; height: 58px; }
+  .lt-b { position: absolute; top: 0; bottom: 0; padding: 0 14px; border-radius: 14px; background: rgba(255,255,255,.08); display: flex; flex-direction: column; justify-content: center; overflow: hidden; transition: transform .15s var(--ease); }
+  .lt-b b { font-size: 20px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lt-b small { font-size: 16px; color: var(--text-2); white-space: nowrap; }
+  .lt-b.none { background: rgba(255,255,255,.03); }
+  .lt-b.none b { color: var(--text-2); font-weight: 400; }
+  .lt-b.focus { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(236,240,245,.92)); color: #111; transform: scale(1.02); box-shadow: 0 6px 18px rgba(0,0,0,.3); z-index: 1; }
+  .lt-b.focus small, .lt-b.focus.none b { color: #444; }
+  .lt-nowl { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); box-shadow: 0 0 8px rgba(var(--accent-rgb),.6); z-index: 2; pointer-events: none; }
+  #livetv .fm-list, #radio .fm-list { gap: 4px; }
+  /* The detail strip: the highlighted programme, its time, and what it's about (two lines at most). */
+  #livetv .fm-info, #radio .fm-info { height: 70px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.5; opacity: 1; }
+  #livetv .fm-info b, #radio .fm-info b { font-weight: 600; font-size: 23px; margin-right: 12px; }
+  .lt-time { color: var(--text-2); font-size: 20px; }
+  .lt-desc { color: var(--text-2); font-size: 20px; margin-left: 12px; }
+  .lt-mono { font-style: normal; font-size: 15px; font-weight: 700; color: #fff; letter-spacing: .5px; }
+  .lt-h { height: 40px; padding: 14px 22px 0; font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-2); }
+  .lt-gi { flex: none; width: 34px; text-align: center; font-size: 26px; line-height: 1; }
+  .fm-pl.focus .lt-gi { color: #111; }
+  .lt-star { font-style: normal; font-size: .8em; color: #ffd60a; }
+  .fm-row.focus .lt-star { color: #c99700; }
+  /* A file's options, the delete question and the rename keyboard: a card over the list, the list dimmed behind. */
+  .fm-pop { position: absolute; left: 50%; top: 50%; width: 620px; transform: translate(-50%, -50%) scale(.96); padding: 36px 40px 34px; border-radius: 36px;
+    opacity: 0; visibility: hidden; transition: opacity .2s var(--ease), transform .2s var(--ease), visibility 0s linear .2s;
+    background: linear-gradient(180deg, rgba(44,48,56,.97), rgba(26,28,34,.97)); box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+  .fm-pop.open { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); transition-delay: 0s; }
+  .fm-pop.wide { width: 1040px; }
+  .fm-pop h3 { font-size: 34px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fm-pop p { font-size: 22px; color: var(--text-2); margin-top: 8px; line-height: 1.4; }
+  .fm-pop .btns { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+  .fm-pop .sbtn { flex: none; height: 70px; font-size: 26px; }
+  .fm-pop .sbtn.danger { color: #ff453a; }
+  .fm-pop .sbtn.danger.focus { background: #ff453a; color: #fff; }
+  .fm-pop .kbdisp { font-size: 38px; margin: 18px 0 18px; text-overflow: ellipsis; }
+  .fm-pop .kbgrid { justify-content: center; }
+  .popping .fm-body, .popping .fm-info { opacity: .25; }
+  .light .fm-pop { background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(242,244,248,.97)); }
+  .light .fm-bar { background: rgba(0,0,0,.1); }
+  .light .fm-body { border-top-color: rgba(0,0,0,.1); }
+  .light .fm-pl.on, .light .fm-cols.focus { background: rgba(0,0,0,.07); }
+  .light .fm-pl.focus, .light .fm-row.focus { background: #1c1c1e; color: #fff; }
+  .light .fm-pl.focus small, .light .fm-row.focus .fm-k, .light .fm-row.focus .fm-d, .light .fm-row.focus .fm-s { color: rgba(255,255,255,.75); }
+
+
+  /* Radio (24d-radio): the Live TV panel's layout, with station rows: logo · name over its kind · where · playing. */
+  .rd-row { grid-template-columns: 56px minmax(0, 1fr) 300px 44px; height: 70px; border-radius: 26px; }
+  .rd-n { display: flex; flex-direction: column; justify-content: center; min-width: 0; gap: 2px; }
+  .rd-n .fm-n { font-size: 25px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rd-n .fm-k { font-size: 18px; }
+  .rd-row .fm-s { font-size: 20px; }
+  .rd-row.playing:not(.focus) { background: rgba(var(--accent-rgb), .16); }
+  .rd-row .fm-ico { position: relative; width: 44px; height: 44px; border-radius: 11px; overflow: hidden; }
+  .rd-call { font-size: 12px; letter-spacing: .3px; }
+  .rd-logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; opacity: 0; transition: opacity .2s; }
+  .rd-logo.has img { opacity: 1; }
+  .rd-st { display: flex; justify-content: center; }
+  .rd-eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 20px; vertical-align: -3px; }
+  .rd-eq i { display: block; width: 4px; height: 6px; border-radius: 2px; background: var(--accent); }
+  .rd-eq.on i { animation: rdEq 0.9s ease-in-out infinite alternate; }
+  .rd-eq.on i:nth-child(2) { animation-delay: -.3s; } .rd-eq.on i:nth-child(3) { animation-delay: -.6s; }
+  .fm-row.focus .rd-eq i { background: #111; }
+  @keyframes rdEq { from { height: 5px; } to { height: 20px; } }
