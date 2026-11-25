@@ -4,6 +4,7 @@
   // server (no alpha / beta / rc / nightly), Appstore apps and Fire OS by Amazon. Checks run on the user's schedule
   // (how often, and from what time of day); an update found becomes a notice. Installing stays the user's step.
   var UPDATE_REPO = "", updTimer = 0;
+  var SOURCE_REPO = "offshoreupdates-web/offshore-tv";     // the code, issues and private security reports (About, Help)
   function cmpVer(a, b) {                                   // 2.26 < 2.26.1 < 2.27
     var x = String(a).replace(/^v/, "").split("."), y = String(b).replace(/^v/, "").split(".");
     for (var i = 0; i < Math.max(x.length, y.length); i++) { var d = (parseInt(x[i], 10) || 0) - (parseInt(y[i], 10) || 0); if (d) return d > 0 ? 1 : -1; }
@@ -18,7 +19,14 @@
                               "Sound output shows what your TV or sound system really gets: stereo, or the surround format when surround is on",
                               "Keep watching now includes YouTube and Amazon's other video apps",
                               "The app name sits in the right place when there's no Keep watching row, and weather alerts sit under the clock",
-                              "Offshore is open source under the GNU GPL, with every library and source credited in About"]],
+                              "Offshore is open source under the GNU GPL, with every library and source credited in About. The code, ideas and fixes: github.com/offshoreupdates-web/offshore-tv",
+                              "Live video, rebuilt: 66 sets in 14 groups (beaches, underwater, wildlife, weather, sky and space, cities, an aerial world tour, national parks, scenic drives and trains, sports, cozy, abstract art, holidays), with hand-picked Creative Commons videos from YouTube, credited to each channel",
+                              "Today's weather plays the sky outside (rain, snow, fog, clouds or stars), and Near you shows videos of your own town",
+                              "Any YouTube video as a background: search or paste a link, pick where it starts and how long it runs (up to 30 minutes, 10 in 4K), and whether its sound comes too",
+                              "Background sound: a quiet fire, rain or waves from videos saved with sound, silent while music plays. Settings › Backgrounds › Live video › Sound turns it on or off",
+                              "Video quality is one setting: 1080p, or 4K when the TV is set to 4K",
+                              "Setup shows which extras are still off and the exact command to switch them on from a computer",
+                              "Updates now come from the offshore-tv project on GitHub"]],
     ["0.18", "November 2026", ["Security: a full review of the app. Text from radio station lists is handled more strictly, the home screen refuses any outside script, and the radio relay keeps away from your home network",
                               "Privacy: the settings backup no longer includes what you watched or listened to",
                               "Settings › Home screen › Keep watching: Keep watching, Plex and Fox One show names together in one place"]],

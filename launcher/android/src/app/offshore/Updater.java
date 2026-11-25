@@ -28,7 +28,7 @@ import java.security.MessageDigest;
 final class Updater {
     private static final String TAG = "Offshore";
     /** Where releases are announced. Empty: no updates from a site (the GitHub check or a computer still work). */
-    static final String FEED = "https://offshoreupdates-web.github.io/offshore/latest.json";
+    static final String FEED = "https://offshoreupdates-web.github.io/offshore-tv/latest.json";   // the offshore-tv repo's GitHub Pages
     private static final int MAX_APK = 60 << 20;
 
     interface Progress { void at(long done, long total); }

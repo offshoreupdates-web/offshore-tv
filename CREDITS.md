@@ -17,6 +17,16 @@ author and licence:
 | The Metropolitan Museum of Art (Open Access) | paintings | public domain (CC0) |
 | Art Institute of Chicago (public API) | paintings and prints | public domain (CC0) |
 | Library of Congress (Photochrom collection) | colour photos from around 1900 | no known restrictions |
+| YouTube, Creative Commons videos only | the built-in live video sets and "Near you" | CC BY, each clip credited on screen with its channel |
+
+The built-in live video sets were picked by hand from videos their uploaders published on YouTube under the Creative
+Commons Attribution licence, and each clip's licence is checked again when the TV saves it. The video ids and channels
+are listed in `launcher/web/src/js/06-backgrounds-online.js`. "Near you" uses YouTube's own Creative Commons filter.
+Saving them still goes through YouTube, which its terms of service don't allow.
+
+**YouTube search** (Settings > Backgrounds > Live video > YouTube) is different: the videos belong to their creators, are
+credited on screen with the channel's name, and are saved on the user's own TV at their request. Downloading them is
+against YouTube's terms of service, which the app says before anything is saved.
 
 ## Sounds
 
@@ -37,6 +47,13 @@ Bundled into the app (downloaded by `tools/setup_toolchain.ps1`, see `tools/libs
 | Netty 3.10.6 | used by nfs-client | Apache 2.0 |
 | Apache Commons Lang 3.12.0 | used by nfs-client | Apache 2.0 |
 | SLF4J API 1.7.36 | logging interface | MIT |
+| NewPipe Extractor 0.27.1 | YouTube backgrounds: search and video streams | GPLv3 or later |
+| nanojson (NewPipe's fork) | used by NewPipe Extractor | Apache 2.0 |
+| jsoup 1.24.1 | used by NewPipe Extractor | MIT |
+| Rhino 1.8.1 | used by NewPipe Extractor (runs YouTube's player code) | MPL 2.0 |
+| protobuf-javalite 4.36.2 | used by NewPipe Extractor | BSD 3-Clause |
+| JSR 305 annotations 3.0.2 | used by NewPipe Extractor | Apache 2.0 |
+| desugar_jdk_libs_nio 2.1.5 | Java library parts Fire OS lacks, added at build time | GPLv2 with Classpath Exception |
 
 ## Data
 

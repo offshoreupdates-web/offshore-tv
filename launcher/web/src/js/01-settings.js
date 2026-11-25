@@ -121,8 +121,11 @@
   var PREF_DEFAULTS = { theme: "dark", bg: "time", speed: 45, clock: "12", beach: "show", ambient: 900, ssStyle: "mirror", ssSize: "normal", homeClockSize: 1, homeInfoSize: 1, edges: "normal", homeWeek: "show", homeClock: "show", homeInfo: "left", homeHero: "show", homeBar: "auto", homeHint: "show", ssNews: "both", ssNewsSrc: "npr", stocks: ["SPY:etf", "DIA:etf", "COMP:index"], crypto: ["BTC", "ETH"], ssCal: "wx", ssMusic: "show", ssScores: "show",sports: "off", leagues: ["nfl", "nba"], teams: [], sounds: "soft", notifySound: "chime",
                         lang: "en", tz: "auto", share: "off", artLookup: "on", updMode: "notify", updFreq: "weekly", updHour: 3,
                         alertsOn: "on", alertSound: "tone", bgMatch: "on", gameNotices: "on", notifPos: "tc", tileAuto: "on", tileOrder: "used", custPin: "", updNotices: "quiet",
-                        font: "system", accent: "blue", tint: "clear", focusStyle: "white", glass: "frosted", tileShape: "round", tileDim: "dim", focusFx: "lift", motion: "full", lite: "auto", wxFx: "on", kw: "media", kwWhere: "app", foxRead: "off", npFull: "button", homeClockStyle: "panel", vidQuality: "auto", vidKeep: "stream", vidClip: "", bgPhoto: "" };
+                        font: "system", accent: "blue", tint: "clear", focusStyle: "white", glass: "frosted", tileShape: "round", tileDim: "dim", focusFx: "lift", motion: "full", lite: "auto", wxFx: "on", kw: "media", kwWhere: "app", foxRead: "off", npFull: "button", homeClockStyle: "panel", vidQuality: "1080", vidSound: "on", vidKeep: "stream", vidClip: "", bgPhoto: "" };
   var PREFS = Object.assign(JSON.parse(JSON.stringify(PREF_DEFAULTS)), load("prefs") || {});
+  // Live video quality is one setting now (1080p, or 4K): the old "auto" and the separate YouTube quality fold into it.
+  if (PREFS.ytQuality === "4k" || PREFS.vidQuality === "4k") PREFS.vidQuality = "4k"; else PREFS.vidQuality = "1080";
+  delete PREFS.ytQuality;
 
   // Settings > Language: dates and times in that language (the browser's own formats), plus the home screen's words
   // and the Settings labels. Text from the data sources (forecast wording, team names) stays as they send it.

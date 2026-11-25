@@ -21,7 +21,10 @@
   ];
   var nasReturn = "bg", delReturn = "bg";                 // where Back goes from the network folder / delete lists
   var picSet = "";                                        // the photo set whose photos Backgrounds › Photos › a set shows
+  var vidGroup = "";                                      // the group Backgrounds › Live video shows ("": the list of groups)
   var clipSet = "";                                       // the live set whose clips Backgrounds › Live video › a set shows
+  var ytAdd = null;                                    // Live video › YouTube › one video: {v, st, len, snd} while it's set up
+  var ytQ = "", ytRes = null, ytErr = "";               // Live video › YouTube: the search, its results (null while searching)
   function rowOf(key) { return PREF_ROWS.filter(function (r) { return r.key === key; })[0]; }
   // Folders A to Z, and the settings in each folder A to Z, sorted here so new ones always land in order.
   // Related rows are named to sit together ("Check for updates", "Check how often", "Check now", "Check time").
@@ -252,13 +255,23 @@
   // the TV grant these (its settings pages for them are placeholders, and apps can't reach its developer connection),
   // so they're switched on once from a computer: tools\setup_tv.ps1 does all four and checks them.
   var SETUP = [["home", "Home button opens Offshore"], ["music", "Music controls"], ["usage", "Task manager app list"], ["secure", "Developer access switch"]];
+  // The exact computer step for this TV (tools/setup_tv.ps1, see its header), with the TV's own address.
+  function setupCmd(ip, unix) {
+    var tv = (ip || "<TV address>") + ":5555";
+    return unix ? "pwsh -File ./tools/setup_tv.ps1 -Ip " + tv : "powershell -ExecutionPolicy Bypass -File .\\tools\\setup_tv.ps1 -Ip " + tv;
+  }
   function permState() { try { return app && app.permStatus ? JSON.parse(app.permStatus()) : {}; } catch (e) { return {}; } }
   function setupRows() {
     if (!app || !app.permStatus) return [{ label: "Permissions show on the TV", act: true, none: true }];
     var ps = permState(), off = SETUP.filter(function (x) { return !ps[x[0]]; }).length;
     var rows = SETUP.map(function (x) { return { label: x[1], value: ps[x[0]] ? "On  ✓" : "Off", act: true, id: "perm" }; });
-    rows.push({ label: off ? "To turn these on, run tools\\setup_tv.ps1 on a computer on the same Wi-Fi, with ADB debugging on (Fire Settings > My Fire TV > Developer options). It takes a few seconds."
-                           : "Everything is on.", act: true, none: true });
+    if (off) {
+      rows.push({ label: "Still off: " + SETUP.filter(function (x) { return !ps[x[0]]; }).map(function (x) { return x[1].toLowerCase(); }).join(", "), act: true, head: true, none: true });
+      rows.push({ label: "1. On this TV: Fire Settings › My Fire TV › Developer options › ADB debugging: On", act: true, none: true });
+      rows.push({ label: "2. On a computer on the same Wi-Fi, in the folder of Offshore's download, run:", act: true, none: true });
+      rows.push({ label: setupCmd(suIp()), act: true, none: true });
+      rows.push({ label: "On a Mac or Linux: " + setupCmd(suIp(), true), act: true, none: true });
+    } else rows.push({ label: "Everything is on.", act: true, none: true });
     return rows;
   }
 
@@ -626,6 +639,42 @@
     rows.push({ label: "This TV appears as “" + cur + " TV” in Bluetooth and LocalSend", act: true, none: true });
     return rows;
   }
+  // Live video › YouTube › one video. Lengths: 1 to 30 minutes in 1080p, at most 10 in 4K, never past the video's end.
+  var YT_LENS = [60, 180, 300, 600, 900, 1800];
+  function ytAdd4k() { return PREFS.vidQuality === "4k" && !!(app && app.tvIs4k && app.tvIs4k()); }
+  function ytAddMax() { var d = ytAdd.v.d ? Math.max(20, ytAdd.v.d - ytAdd.st) : 1800; return Math.min(d, ytAdd4k() ? 600 : 1800); }
+  function ytAddLen() { return Math.min(ytAdd.len, ytAddMax()); }
+  function ytLenText(n) { return n >= ytAddMax() && ytAdd.v.d && ytAdd.v.d - ytAdd.st <= n ? "To the end (" + ytTime(n) + ")" : n % 60 ? ytTime(n) : n / 60 + " min"; }
+  function ytAddKey(action, r) {
+    if (!r) return false;
+    var dir = action === "left" ? -1 : action === "right" ? 1 : action === "ok" ? 1 : 0;
+    if (!dir) return false;
+    if (r.id === "yst") {
+      var top = Math.max(0, Math.min(YT_MAX_START, (ytAdd.v.d || YT_MAX_START + 20) - 20));
+      ytAdd.st = action === "ok" && ytAdd.st >= top ? 0 : Math.max(0, Math.min(top, ytAdd.st + dir * 15));
+    } else if (r.id === "ylen") {
+      var lens = YT_LENS.filter(function (n) { return n < ytAddMax(); }).concat([ytAddMax()]), at = lens.indexOf(ytAddLen());
+      if (at < 0) at = lens.filter(function (n) { return n < ytAddLen(); }).length;
+      ytAdd.len = lens[action === "ok" ? (at + 1) % lens.length : Math.max(0, Math.min(lens.length - 1, at + dir))];
+    } else if (r.id === "ysnd") ytAdd.snd = !ytAdd.snd;
+    else if (r.id === "ysave" && action === "ok") {
+      if (ytAddPick(Object.assign({}, ytAdd.v, { st: ytAdd.st || undefined, len: ytAddLen(), snd: ytAdd.snd || undefined }))) ytAdd = null;
+    } else return false;
+    return true;
+  }
+  // Adds one video to the "YouTube picks" set and saves it on the TV.
+  function ytAddPick(v) {
+    var ys = myVidCats().filter(function (c) { return c.id === "ytpicks"; })[0] || { id: "ytpicks", name: "YouTube picks", src: "yt", group: "YouTube", vids: [] };
+    if (ys.vids.some(function (x) { return x.id === v.id; })) { toast("Already in YouTube picks"); return false; }
+    if (vidJobs.ytpicks) { toast("Wait for the last video to finish"); return false; }
+    ys.vids = ys.vids.concat([v]);
+    save("vidcats", myVidCats().filter(function (c) { return c.id !== "ytpicks"; }).concat([ys]));
+    downloadVid(ys);
+    toast("Saving “" + (v.t || "the video").slice(0, 40) + "” on the TV… It plays when it's ready");
+    PREFS.bg = "vid:" + ys.id; PREFS.vidClip = ""; applyPrefs("bg");
+    custMode = "bglive"; vidGroup = "Your videos"; custRow = Math.max(0, custRows().map(function (r) { return r.bg; }).indexOf("vid:" + ys.id));
+    return true;
+  }
   function custRows() {                 // [{label, value, act, star}]
     if (custMode === "room") return roomRows();
     if (custMode === "bt") return btRows();
@@ -654,27 +703,41 @@
       return [{ label: "Now showing", act: true, head: true, none: true },
               { label: nowName, act: true, none: true },
               { label: "Photos", value: "Beach sets, topics, your own  ›", act: true, id: "tophotos", icon: "look" },
-              { label: "Live video", value: VID_TOPICS.filter(function (c) { return c.files || c.src; }).length + " ambience sets, " + (LIVE_4K || !app ? "1080p and 4K" : "1080p") + "  ›", act: true, id: "tolive", icon: "media" },
-              { label: "Free to use, credits shown: Wikimedia Commons, NASA, The Met, the Art Institute of Chicago and the Library of Congress", act: true, none: true }];
+              { label: "Live video", value: VID_TOPICS.length + " sets in " + VID_GROUPS.length + " groups, 1080p or 4K  ›", act: true, id: "tolive", icon: "media" },
+              { label: "Free to use, credits shown: Creative Commons videos on YouTube, Wikimedia Commons, NASA, The Met, the Art Institute of Chicago and the Library of Congress", act: true, none: true }];
+    }
+    // Live video: the groups first (Beaches & tropical, Weather, ...), then a group's own sets on the same page.
+    if (custMode === "bglive" && !vidGroup) {
+      var grows = [], curG = PREFS.bg.indexOf("vid:") === 0 ? vidGroupOf(vidCatOf(PREFS.bg.slice(4))) : "";
+      vidGroups().forEach(function (g) {
+        var n = vidCats().filter(function (c) { return vidGroupOf(c) === g; }).length;
+        grows.push({ label: g, act: true, id: "vgrp", grp: g, value: (g === curG ? "✓  " : "") + n + (n === 1 ? " set" : " sets") + "  ›" });
+      });
+      grows.push({ label: "Find more", act: true, head: true, none: true });
+      grows.push({ label: "YouTube…", value: "Search, or paste a link  ›", act: true, id: "ytsearch",
+                   note: "Any video, saved on the TV: up to 30 min (10 in 4K), sound optional. Downloading is against YouTube's terms: your call." });
+      grows.push({ label: "Wikimedia and NASA…", value: "Search  ›", act: true, id: "vidsearch" });
+      grows.push({ label: "Playback", act: true, head: true, none: true });
+      grows.push({ label: "Video quality", act: true, id: "vidq", value: PREFS.vidQuality === "4k" ? "4K when the TV is set to 4K" : "1080p",
+                   note: "For YouTube clips saved from now on. 1080p: 30-80 MB a built-in clip. 4K: about 4 times bigger, only while the TV sends 4K." });
+      grows.push({ label: "Sound", act: true, id: "vidsnd", value: PREFS.vidSound === "off" ? "Off" : "On",
+                   note: "Only for YouTube videos you saved with sound (a fire, rain, waves). Silent while music, the radio or a sleep sound plays." });
+      grows.push({ label: "Wikimedia and NASA clips", act: true, id: "vidkeep", value: PREFS.vidKeep === "keep" ? "Keep on the TV" : "Stream (no storage)" });
+      if (vidCats().some(function (c) { return vidList(c.id) && c.id !== "shared"; })) grows.push({ label: "Forget live videos", value: "›", act: true, id: "viddelete" });
+      grows.push({ label: "Built-in sets: Creative Commons videos from YouTube (credited to each channel, saved on the TV), Wikimedia Commons and NASA", act: true, none: true });
+      return grows;
     }
     if (custMode === "bglive") {
       var lrows = [];
       var lastGroup = "", gi = function (c) { var i = VID_GROUPS.indexOf(c.group); return i < 0 ? 99 : i; };
-      vidCats().slice().sort(function (a, b) { return gi(a) - gi(b); }).forEach(function (c) {
-        var tid = c.auto ? seasonalTopic() : c.id, n = vidList(tid), j = vidJobs[tid], on = PREFS.bg === "vid:" + c.id;
-        if ((c.group || "Your videos") !== lastGroup) { lastGroup = c.group || "Your videos"; lrows.push({ label: lastGroup, act: true, head: true, none: true }); }
+      vidCats().filter(function (c) { return vidGroupOf(c) === vidGroup; }).sort(function (a, b) { return gi(a) - gi(b); }).forEach(function (c) {
+        var tid = c.auto ? autoTopic(c) : c.id, n = vidList(tid), j = vidJobs[tid], on = PREFS.bg === "vid:" + c.id;
         // OK on a set opens its clips (the whole set, or one clip kept); Holidays & seasons picks today's set itself.
         lrows.push({ label: c.name, act: true, bg: "vid:" + c.id, vcat: c,
-                     value: (on ? "✓  " : "") + (c.auto ? "Now: " + vidCatOf(tid).name : j ? "Getting videos " + j.done + " of " + (j.total || VID_PER)
-                            : (on && pinnedClip(c.id) >= 0 ? "One clip" : n ? n.length + (n.length === 1 ? " clip" : " clips") : "Stream") + "  ›") });
+                     value: (on ? "✓  " : "") + (c.auto ? "Now: " + vidCatOf(tid).name : c.src === "near" && !j ? (nearPlace() ? nearPlace().split(",")[0] + (n ? " · " + n.length + " clips" : "") : "Set a location") + "  ›" : j ? "Getting videos " + j.done + " of " + (j.total || VID_PER)
+                            : (on && pinnedClip(c.id) >= 0 ? "One clip" : n ? n.length + (n.length === 1 ? " clip" : " clips") : c.yt ? "Saved on the TV" : "Stream") + "  ›") });
       });
-      lrows.push({ label: "Search for videos…", value: "Wikimedia and NASA  ›", act: true, id: "vidsearch" });
-      lrows.push({ label: "Playback", act: true, head: true, none: true });
-      var vq = PREFS.vidQuality || "auto";
-      if (LIVE_4K || !app) lrows.push({ label: "Video quality", act: true, id: "vidq",
-                   value: (vq === "4k" ? "4K when a clip has it" : vq === "1080" ? "1080p" : "Auto") + (nativeOn && nativeRes ? " · playing " + nativeRes : "") });
-      lrows.push({ label: "Live videos", act: true, id: "vidkeep", value: PREFS.vidKeep === "keep" ? "Keep on the TV" : "Stream (no storage)" });
-      if (vidCats().some(function (c) { return vidList(c.id) && c.id !== "shared"; })) lrows.push({ label: "Forget live videos", value: "›", act: true, id: "viddelete" });
+      if (vidGroup === "Cities" && !nearPlace()) lrows.push({ label: "Near you needs the TV's location: Settings › Location", act: true, none: true });
       return lrows;
     }
     // One live set's page: the whole set (a new clip every minute or so), or one clip kept on screen, looping.
@@ -688,8 +751,30 @@
       }
       if (cj) crows.push({ label: "Getting the clips… " + cj.done + " of " + (cj.total || VID_PER), act: true, none: true });
       else if (!cl) crows.push({ label: "Finding the clips…", act: true, none: true });
-      crows.push({ label: "Videos from " + (cc.src === "nasa" ? "NASA" : cc.src === "mix" ? "Wikimedia Commons and NASA" : "Wikimedia Commons") + " · the credit shows at the bottom of the screen", act: true, none: true });
+      crows.push({ label: "Videos from " + (cc.src === "nasa" ? "NASA" : cc.src === "mix" ? "Wikimedia Commons and NASA" : cc.src === "yt" ? "YouTube, saved on this TV" : cc.src === "near" ? "YouTube (Creative Commons), saved on this TV"
+                 : cc.yt ? "YouTube (Creative Commons, saved on this TV) and Wikimedia Commons" : "Wikimedia Commons") + " · the credit shows at the bottom of the screen", act: true, none: true });
       return crows;
+    }
+    // YouTube results: make a set of the top ones, or add one video to the "YouTube picks" set.
+    if (custMode === "ytres") {
+      if (ytErr) return [{ label: ytErr, act: true, none: true }];
+      if (!ytRes) return [{ label: "Searching YouTube for “" + ytQ + "”…", act: true, none: true }];
+      if (!ytRes.length) return [{ label: "Nothing found for “" + ytQ + "”", act: true, none: true }];
+      var yrows = [{ label: ytRes.length > 1 ? "Make a set of the top " + Math.min(YT_PER, ytRes.length) : "Make a set of this video", value: "“" + ytQ.slice(0, 30) + "”", act: true, id: "ytset" },
+                   { label: "Or add one video to YouTube picks", act: true, head: true, none: true }];
+      ytRes.forEach(function (v) { yrows.push({ label: (v.t || v.id).slice(0, 70), value: (v.a || "").slice(0, 24) + " · " + ytTime(v.d) + "  ›", act: true, yt: v }); });
+      return yrows;
+    }
+    // One video, before it's saved: where it starts, how long, and whether its sound comes too.
+    if (custMode === "ytadd" && ytAdd) {
+      var yv = ytAdd.v, ylen = ytAddLen(), ymb = Math.round(ylen * (ytAdd4k() ? 2.5 : 0.6) + (ytAdd.snd ? ylen * 0.016 : 0));
+      return [{ label: (yv.t || yv.id).slice(0, 80), value: (yv.a || "").slice(0, 24) + (yv.d ? " · " + ytTime(yv.d) : ""), act: true, none: true },
+              { label: "Starts at", value: ytTime(ytAdd.st) + (ytAdd.st ? "" : " (the beginning)"), act: true, adj: true, id: "yst",
+                note: "Skip an intro or a title card: ◀ ▶ moves 15 seconds, up to 10 minutes in." },
+              { label: "Length", value: ytLenText(ylen), act: true, adj: true, id: "ylen" },
+              { label: "Sound", value: ytAdd.snd ? "On, quietly" : "Off (picture only)", act: true, adj: true, id: "ysnd",
+                note: "For a fire, rain or waves. It's quiet, and silent while music, the radio or a sleep sound plays." },
+              { label: "Save on the TV", value: "About " + (ymb >= 1000 ? (ymb / 1000).toFixed(1) + " GB" : Math.max(5, ymb) + " MB") + (ytAdd4k() ? " · 4K" : " · 1080p"), act: true, save: true, id: "ysave" }];
     }
     // One photo set's page: take turns through it (as before), or keep one photo on screen.
     if (custMode === "bgpics") {
@@ -774,14 +859,16 @@
       sec("Private by design", ["No account, no ads, no analytics, no data sold. Your settings stay on this TV.",
                                 "Weather, news and the rest come from official and well-known sources, each named on screen, and each can be turned off."]);
       sec("Made for the community", ["Offshore is free and open source. Anyone can read the code, see exactly what it does, suggest a change or make their own version.",
-                                     UPDATE_REPO ? "The code, updates and a place for ideas and fixes: github.com/" + UPDATE_REPO : "It's shared so people can take back their own TVs. Ideas and fixes are always welcome."]);
+                                     "The code, updates and a place for ideas and fixes: github.com/" + SOURCE_REPO + ". Security problems: report them privately from its Security tab."]);
       sec("Open-source projects inside Offshore", ["smbj, asn-one and MBassador: SMB network folders (Apache 2.0, MIT)",
                                                    "nfs-client, Netty, Apache Commons Lang and SLF4J: NFS network folders (Apache 2.0, MIT)",
                                                    "Bouncy Castle: encryption for network folders and sharing from phones (MIT-style)",
+                                                   "NewPipe Extractor, with jsoup, Rhino, nanojson and protobuf: YouTube backgrounds (GPLv3, MIT, MPL 2.0, Apache 2.0, BSD)",
+                                                   "desugar_jdk_libs: newer Java parts for Fire OS (GPLv2 with the Classpath Exception)",
                                                    "The LocalSend protocol: receiving photos and files from phones",
                                                    "Works with VLC (VideoLAN) for Live TV streams",
                                                    "Offshore is free software under the GNU GPL, version 3. Each library's licence ships inside the app (licenses/THIRD-PARTY-NOTICES.txt) and in the code on GitHub."]);
-      sec("Free photos and videos", ["Wikimedia Commons, NASA, The Met, the Art Institute of Chicago and the Library of Congress. Each photo and video names its author and licence on screen."]);
+      sec("Free photos and videos", ["Wikimedia Commons, NASA, The Met, the Art Institute of Chicago and the Library of Congress. Each photo and video names its author and licence on screen.", "The built-in live video sets are Creative Commons (CC BY) videos from YouTube, each credited with its channel's name. YouTube videos you save yourself are credited the same way."]);
       sec("Thank you", ["Built on the work of many: public weather and science agencies, newsrooms, Wikimedia's photographers and open-source projects. Each is credited where its information appears."]);
       ab.push({ label: "Offshore " + (myVersion() === "preview" ? CHANGELOG[0][0] : myVersion()), act: true, none: true });
       return ab;
@@ -841,9 +928,10 @@
     custLive(rows[custRow]);
     var start = Math.max(0, Math.min(custRow - 3, rows.length - VIS));
     var grp = custMode.indexOf("g:") === 0 ? GROUPS.filter(function (x) { return "g:" + x.id === custMode; })[0] : null;
-    var title = grp ? grp.label : custMode === "search" && kbField ? (kbField === "room" ? "Room name" : kbField === "wifipass" ? wifiTarget : kbField === "sound" ? "Find sounds online" : kbField === "radio" ? "Search radio stations" : kbField === "cardtitle" ? "Card title" : kbField === "cardtext" ? "Note" : kbField === "cardurl" ? "Web address" : kbField === "vidq" ? "Search live videos" : "Network folder")
+    var title = grp ? grp.label : custMode === "search" && kbField ? (kbField === "room" ? "Room name" : kbField === "wifipass" ? wifiTarget : kbField === "sound" ? "Find sounds online" : kbField === "radio" ? "Search radio stations" : kbField === "cardtitle" ? "Card title" : kbField === "cardtext" ? "Note" : kbField === "cardurl" ? "Web address" : kbField === "vidq" ? "Search live videos" : kbField === "yt" ? "Search YouTube, or paste a link" : "Network folder")
               : custMode === "snddo" && sndSel ? sndSel.title
               : custMode === "bgclips" ? (vidCatOf(clipSet) || {}).name || "Live video"
+              : custMode === "bglive" && vidGroup ? vidGroup
               : custMode === "bgpics" ? (picSet.indexOf("cat:") === 0 ? (catOf(picSet.slice(4)) || {}).name : (PREF_ROWS.filter(function (r) { return r.key === "bg"; })[0].opts.filter(function (o) { return o[0] === picSet; })[0] || [0, "Photos"])[1]) || "Photos"
               : custMode === "btdev" && btSel ? btSel.name : CUST_TITLE[custMode];
     document.querySelector("#cust h2").textContent = T(title) + ((custMode === "main" || grp) && custDirty ? "  ·  " + T("unsaved changes") : "");
@@ -852,7 +940,7 @@
     foot.innerHTML = '<div class="fh"></div><div class="fk"></div>';
     var lists = custMode === "main" || grp;                // explanations belong to settings lists, not pads and keyboards
     foot.firstChild.textContent = lists && cur.help && HELP[cur.help] ? T(HELP[cur.help]) : cur.note ? T(cur.note) : "";   // a row may explain itself
-    foot.lastChild.textContent = grp ? "▲ ▼ choose · ◀ ▶ change · Back" : CUST_FOOT[custMode];
+    foot.lastChild.textContent = grp ? "▲ ▼ choose · ◀ ▶ change · Back" : custMode === "bglive" && !vidGroup ? "▲ ▼ choose · OK opens a group · Back" : CUST_FOOT[custMode];
     box.innerHTML = "";
     if (custMode === "speed") { box.appendChild(speedCard()); return; }   // its own card, not a list
     if (custMode === "plex" && PLEX.code) { box.appendChild(plexCard()); plexPoll(); return; }   // the sign-in code, big
@@ -1034,7 +1122,8 @@
         else if (/^card/.test(kbField)) { custMode = "cardedit"; custRow = 0; }
         else if (kbField === "wifipass") { custMode = "wifi"; custRow = 0; }
         else if (kbField === "sound") { backTo("soundFind"); }
-        else if (kbField === "vidq") { custMode = "bglive"; custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf("vidsearch")); }
+        else if (kbField === "vidq") { custMode = "bglive"; vidGroup = ""; custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf("vidsearch")); }
+        else if (kbField === "yt") { custMode = "bglive"; vidGroup = ""; custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf("ytsearch")); }
         else if (kbField) { custMode = "nas"; custRow = nasRowIndex(kbField); }
         else { custMode = "bgphotos"; custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf("search")); }
         kbField = "";
@@ -1093,6 +1182,16 @@
           if (nm) { PREFS.room = nm; applyPrefs("room"); }
           custMode = "room"; custRow = 0; kbField = ""; kbShift = false;
         }
+        else if (k === "✓" && kbField === "yt") {       // YouTube: the results get their own page
+          var yq = kbText.trim();
+          if (yq.length < 2) toast("Type a word first");
+          else {
+            ytQ = yq; ytRes = null; ytErr = ""; custMode = "ytres"; custRow = 0; kbField = ""; kbShift = false;
+            var mine = ytQ;
+            ytSearch(yq).then(function (l) { if (mine === ytQ) { ytRes = l; if (custOpen && custMode === "ytres") { custRow = 0; renderCustom(); } } },
+                              function (e) { if (mine === ytQ) { ytErr = (e && e.message && !/^\d+$/.test(e.message) ? e.message : "YouTube didn't answer. Try again in a minute."); if (custOpen && custMode === "ytres") renderCustom(); } });
+          }
+        }
         else if (k === "✓" && kbField === "vidq") {     // a live video search of your own: Commons and NASA
           var vq = kbText.trim();
           if (vq.length < 2) toast("Type a word first");
@@ -1101,7 +1200,7 @@
             save("vidcats", myVidCats().concat([vc]));
             downloadVid(vc);
             toast("Finding videos of “" + vc.name + "”…");
-            custMode = "bglive"; kbField = ""; kbShift = false;
+            custMode = "bglive"; vidGroup = "Your videos"; kbField = ""; kbShift = false;
             custRow = Math.max(0, custRows().map(function (r) { return r.bg; }).indexOf("vid:" + vc.id));
           }
         }
@@ -1129,6 +1228,11 @@
       return;
     }
     if (action === "back") {
+      if (custMode === "bglive" && vidGroup) {                                   // back to the list of groups, on this one
+        var fromG = vidGroup; vidGroup = "";
+        custRow = Math.max(0, custRows().map(function (r) { return r.grp || ""; }).indexOf(fromG));
+        previewing = false; liveSync(); renderCustom(); return;
+      }
       if (custMode === "bgphotos" || custMode === "bglive") {                    // back to the Backgrounds top page
         var fromBg = custMode; custMode = "bg";
         custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf(fromBg === "bgphotos" ? "tophotos" : "tolive"));
@@ -1144,7 +1248,12 @@
         custRow = Math.max(0, custRows().map(function (r) { return r.vcat ? r.vcat.id : ""; }).indexOf(clipSet));
         previewBg(custRows()[custRow]); renderCustom(); return;
       }
-      if (custMode === "viddelete") { custMode = "bglive"; custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf("viddelete")); renderCustom(); return; }
+      if (custMode === "ytadd") {                                                // back to the results, on that video
+        var fromV = ytAdd && ytAdd.from; ytAdd = null; custMode = "ytres";
+        custRow = Math.max(0, custRows().map(function (r) { return r.yt ? r.yt.id : ""; }).indexOf(fromV)); renderCustom(); return;
+      }
+      if (custMode === "ytres") { custMode = "bglive"; vidGroup = ""; custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf("ytsearch")); renderCustom(); return; }
+      if (custMode === "viddelete") { custMode = "bglive"; vidGroup = ""; custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf("viddelete")); renderCustom(); return; }
       if (custMode === "bgdelete" || custMode === "nas") {
         var from = custMode; custMode = from === "nas" ? nasReturn : delReturn;
         custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf(from === "nas" ? "nas" : custMode === "storage" ? "photos" : "bgdelete"));
@@ -1198,16 +1307,25 @@
         setLocation(TVDEF.lat, TVDEF.lon, null, "tv").then(function (loc) { toast("Location: " + loc.name); if (custOpen) renderCustom(); });
         backTo("location");
       }
-    } else if (custMode === "bg" || custMode === "bgphotos" || custMode === "bglive" || custMode === "bgclips" || custMode === "bgpics") {
+    } else if (custMode === "ytadd") {
+      ytAddKey(action, rows[custRow]);
+    } else if (custMode === "bg" || custMode === "bgphotos" || custMode === "bglive" || custMode === "bgclips" || custMode === "bgpics" || custMode === "ytres") {
       var rb = rows[custRow];
       if (action === "ok" || action === "right") {
         if (rb.id === "tophotos" || rb.id === "tolive") {           // the two lists, each on its own page
-          custMode = rb.id === "tophotos" ? "bgphotos" : "bglive";
-          var cur = custRows().map(function (r) { return r.bg; }).indexOf(PREFS.bg);
+          custMode = rb.id === "tophotos" ? "bgphotos" : "bglive"; vidGroup = "";
+          var cur = custMode === "bglive" ? custRows().map(function (r) { return r.grp || ""; }).indexOf(vidGroupOf(vidCatOf(PREFS.bg.slice(4))) || "-")
+                                          : custRows().map(function (r) { return r.bg; }).indexOf(PREFS.bg);
           custRow = Math.max(0, cur);
           previewBg(custRows()[custRow]);                           // the highlighted one shows at once, not only after a move
         }
-        else if (custMode === "bglive" && rb.vcat && !rb.vcat.auto) {   // a live set: its own page (whole set, or one clip)
+        else if (custMode === "bglive" && rb.id === "vgrp") {        // a group: its sets, on the one in use
+          vidGroup = rb.grp;
+          var gUse = custRows().map(function (r) { return r.bg; }).indexOf(PREFS.bg);
+          custRow = Math.max(0, gUse);
+          previewBg(custRows()[custRow]);
+        }
+        else if (custMode === "bglive" && rb.vcat && !rb.vcat.auto && rb.vcat.src !== "near") {   // a live set: its own page (whole set, or one clip)
           if (!rb.vcat.local && !vidList(rb.vcat.id) && !vidJobs[rb.vcat.id]) downloadVid(rb.vcat);
           clipSet = rb.vcat.id; custMode = "bgclips";
           var crs = custRows(), inUse = crs.map(function (r) { return r.value; }).indexOf("✓");
@@ -1230,6 +1348,30 @@
         }
         else if (rb.id === "search") { custMode = "search"; kbIdx = 0; kbText = ""; kbField = ""; kbShift = false; }
         else if (rb.id === "vidsearch") { custMode = "search"; kbIdx = 0; kbText = ""; kbField = "vidq"; kbShift = false; }
+        else if (rb.id === "ytsearch") {
+          if (!ytAvail()) toast("YouTube backgrounds work on the TV");
+          else { custMode = "search"; kbIdx = 0; kbText = ""; kbField = "yt"; kbShift = false; }
+        }
+        else if (rb.id === "vidq") {
+          PREFS.vidQuality = PREFS.vidQuality === "4k" ? "1080" : "4k"; applyPrefs("vidQuality");
+          toast(PREFS.vidQuality === "4k" ? (app && app.tvIs4k && !app.tvIs4k() ? "4K, once the TV is set to 4K. Until then, 1080p" : "New YouTube clips in 4K") : "New YouTube clips in 1080p");
+        }
+        else if (custMode === "ytres" && rb.yt) {           // one video: its own page (start, length, sound)
+          ytAdd = { v: rb.yt, st: 0, len: 600, snd: false, from: rb.yt.id };
+          custMode = "ytadd"; custRow = Math.max(0, custRows().map(function (r) { return r.id; }).indexOf("ysave"));
+        }
+        else if (custMode === "ytres" && rb.id === "ytset") {   // a new set of the top results, 5 minutes of each
+          var ys = { id: "yt" + Date.now().toString(36), name: ytQ.charAt(0).toUpperCase() + ytQ.slice(1, 40), src: "yt", group: "YouTube", vids: ytRes.slice(0, YT_PER) };
+          save("vidcats", myVidCats().concat([ys]));
+          downloadVid(ys);
+          toast("Saving " + ys.vids.length + " videos on the TV… The first one plays when it's ready");
+          PREFS.bg = "vid:" + ys.id; PREFS.vidClip = ""; applyPrefs("bg");
+          custMode = "bglive"; vidGroup = "Your videos"; custRow = Math.max(0, custRows().map(function (r) { return r.bg; }).indexOf("vid:" + ys.id));
+        }
+        else if (rb.id === "vidsnd") {
+          PREFS.vidSound = PREFS.vidSound === "off" ? "on" : "off"; applyPrefs("vidSound"); liveVolSync();
+          toast(PREFS.vidSound === "off" ? "Background video sound off" : "Background video sound on");
+        }
         else if (rb.id === "nas") {
           var nh = nasInfo();
           if (!nasReady()) toast("Network folders work on the TV");
@@ -1238,12 +1380,6 @@
         }
         else if (rb.id === "bgdelete") { delReturn = "bgphotos"; custMode = "bgdelete"; custRow = 0; }
         else if (rb.id === "viddelete") { delReturn = "bglive"; custMode = "viddelete"; custRow = 0; }
-        else if (rb.id === "vidq") {
-          var qs = ["auto", "4k", "1080"], qi = qs.indexOf(PREFS.vidQuality || "auto");
-          PREFS.vidQuality = qs[(qi + (action === "left" ? 2 : 1)) % 3]; applyPrefs("vidQuality");
-          toast(PREFS.vidQuality === "4k" ? "4K whenever a clip has a 4K original (about 1 in 5 do)" : PREFS.vidQuality === "1080" ? "Live backgrounds in 1080p" : "4K when the TV and the connection can take it");
-          if (liveSet) { var keep = liveSet; liveStop(); PREFS.bg.indexOf("vid:") === 0 && liveSync(); }   // switch quality now
-        }
         else if (rb.id === "bgmatch") {
           PREFS.bgMatch = PREFS.bgMatch === "off" ? "on" : "off"; applyPrefs("bg");
           toast(PREFS.bgMatch === "off" ? "Photo sets show all their photos, any time" : "Photo sets show sunsets at sunset, day at day, night at night");
@@ -1253,7 +1389,7 @@
           toast(PREFS.vidKeep === "keep" ? "New live videos will be kept on the TV" : "New live videos will stream, using no storage");
         }
         else if (rb.vcat) {
-          var vcat = rb.vcat.auto ? vidCatOf(seasonalTopic()) : rb.vcat;
+          var vcat = rb.vcat.auto ? vidCatOf(autoTopic(rb.vcat)) : rb.vcat;
           if (!vcat.local && !vidList(vcat.id) && !vidJobs[vcat.id]) { downloadVid(vcat); toast("Finding " + vcat.name + " videos…"); }
           var picked = rb.clip != null && vidList(vcat.id) ? vidList(vcat.id)[rb.clip] : null;
           PREFS.bg = rb.bg;

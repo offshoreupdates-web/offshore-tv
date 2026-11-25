@@ -30,7 +30,7 @@ while ($http.IsListening) {
         $hosts = "api.exchange.coinbase.com", "api.nasdaq.com", "feeds.npr.org", "feeds.bbci.co.uk", "news.google.com", "www.ndbc.noaa.gov", "data.epa.gov", "api-web.nhle.com", "site.api.espn.com", "itunes.apple.com",
                  "www.pbs.org", "www.whitehouse.gov", "www.war.gov", "www.fbi.gov", "www.justice.gov", "www.cisa.gov", "krebsonsecurity.com", "www.bleepingcomputer.com",
                  "feeds.feedburner.com", "therecord.media", "www.securityweek.com", "feeds.arstechnica.com", "www.theverge.com", "www.wired.com", "www.nasa.gov",
-                 "files.airnowtech.org", "transition.fcc.gov"
+                 "files.airnowtech.org", "transition.fcc.gov", "images-assets.nasa.gov"
         try {
             $uri = [Uri]$u
             if ($uri.Scheme -ne "https" -or $hosts -notcontains $uri.Host) { throw "not allowed" }

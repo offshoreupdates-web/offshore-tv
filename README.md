@@ -4,7 +4,7 @@
 
 [![Licence: GPL v3](https://img.shields.io/badge/licence-GPLv3-blue.svg)](LICENSE)
 [![Fire OS 7 and 8](https://img.shields.io/badge/Fire%20OS-7%20%7C%208-orange.svg)](#requirements)
-[![Latest release](https://img.shields.io/badge/release-0.18-brightgreen.svg)](https://offshoreupdates-web.github.io/offshore/latest.json)
+[![Latest release](https://img.shields.io/badge/release-0.19-brightgreen.svg)](https://offshoreupdates-web.github.io/offshore-tv/latest.json)
 
 ![Offshore's home screen: apps in one row over a beach photo, with the time, weather, tides and forecast](docs/screenshots/home.jpg)
 
@@ -37,7 +37,15 @@ The Amazon home screen stays installed underneath. Turn Offshore off and the TV 
 **Backgrounds**
 - 41 photo sets from Wikimedia Commons, NASA, The Met, the Art Institute of Chicago and the Library of Congress, plus
   search across all five. Photos follow the time of day.
-- 43 live video sets (1080p, silent) from Wikimedia Commons and NASA, plus video search. Streamed, or kept on the TV.
+- 66 live video sets in 14 groups: beaches, underwater, wildlife, nature, weather, sky, cities, an aerial world tour,
+  national parks, scenic drives and trains, sports, cozy, abstract and art, and holidays. Hand-picked Creative Commons
+  clips from YouTube (saved on the TV, 1080p or 4K) with Wikimedia Commons and NASA clips that stream. Two sets choose
+  themselves: **Today's weather** follows the forecast, **Holidays & seasons** the calendar. **Near you** finds
+  Creative Commons videos of the TV's own town.
+- Any YouTube video as a background: search on the TV or paste a link, pick where it starts and how long it runs (up to
+  30 minutes in 1080p, 10 in 4K when the TV is set to 4K), and whether its sound comes too (quiet, and silent while
+  music plays). It's saved on the TV. Uses [NewPipe Extractor](https://github.com/TeamNewPipe/NewPipeExtractor).
+  Downloading from YouTube is against its terms of service; it's each user's choice.
 - Your own photos and videos from a phone or a network folder (SMB or NFS).
 - Every photo and clip is credited on screen with its author and licence.
 
@@ -72,7 +80,7 @@ The Amazon home screen stays installed underneath. Turn Offshore off and the TV 
 
 1. On the TV: Settings › My Fire TV › Developer options › ADB debugging: On. Note the TV's IP address
    (Settings › My Fire TV › About › Network).
-2. Download the APK linked as `apk` in the [release feed](https://offshoreupdates-web.github.io/offshore/latest.json),
+2. Download the APK linked as `apk` in the [release feed](https://offshoreupdates-web.github.io/offshore-tv/latest.json),
    then install it with adb (from Android's platform-tools):
    ```
    adb connect <TV address>:5555
@@ -141,7 +149,7 @@ own TV's config) out of commits.
 
 ## Licence
 
-[GNU General Public License v3](LICENSE). The libraries Offshore includes (Apache 2.0, MIT and the Bouncy Castle
-licence) are listed with their full texts in
+[GNU General Public License v3](LICENSE). The libraries Offshore includes (GPLv3, Apache 2.0, MIT, MPL 2.0, BSD,
+the Bouncy Castle licence, and GPLv2 with the Classpath Exception) are listed with their full texts in
 [launcher/web/licenses/THIRD-PARTY-NOTICES.txt](launcher/web/licenses/THIRD-PARTY-NOTICES.txt), which also ships in
 the app. Credits for photos, videos and data: [CREDITS.md](CREDITS.md).

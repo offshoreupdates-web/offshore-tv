@@ -25,10 +25,10 @@
     if (app && app.fetchUrl && NEWS_HOSTS.indexOf((url.match(/^https:\/\/([^\/]+)\//) || [])[1]) >= 0) {   // news feeds (Settings > Screensaver)
       return new Promise(function (res, rej) { var id = "f" + (++fetchSeq); pendingFetch[id] = [res, rej]; app.fetchUrl(id, url); });
     }
-    if (app && app.fetchUrl && /^https:\/\/(api\.exchange\.coinbase\.com\/products\/|api\.nasdaq\.com\/api\/quote\/|www\.ndbc\.noaa\.gov|data\.epa\.gov|api-web\.nhle\.com|itunes\.apple\.com\/search|mirrors\.kodi\.tv\/releases\/|transition\.fcc\.gov\/fcc-bin\/(tvq|fmq|amq)\?|site\.api\.espn\.com\/apis\/site\/v2\/sports\/[^?]+\/teams\/)/.test(url)) {
+    if (app && app.fetchUrl && /^https:\/\/(api\.exchange\.coinbase\.com\/products\/|api\.nasdaq\.com\/api\/quote\/|www\.ndbc\.noaa\.gov|data\.epa\.gov|api-web\.nhle\.com|itunes\.apple\.com\/search|mirrors\.kodi\.tv\/releases\/|transition\.fcc\.gov\/fcc-bin\/(tvq|fmq|amq)\?|images-assets\.nasa\.gov\/video\/[^\/?#]+\/collection\.json$|site\.api\.espn\.com\/apis\/site\/v2\/sports\/[^?]+\/teams\/)/.test(url)) {
       return new Promise(function (res, rej) { var id = "f" + (++fetchSeq); pendingFetch[id] = [res, rej]; app.fetchUrl(id, url); });
     }
-    if (!app && location.hostname === "localhost" && NEWS_HOSTS.concat(["files.airnowtech.org", "api.exchange.coinbase.com", "api.nasdaq.com", "api-web.nhle.com", "site.api.espn.com", "www.ndbc.noaa.gov", "data.epa.gov", "transition.fcc.gov"])
+    if (!app && location.hostname === "localhost" && NEWS_HOSTS.concat(["files.airnowtech.org", "api.exchange.coinbase.com", "api.nasdaq.com", "api-web.nhle.com", "site.api.espn.com", "www.ndbc.noaa.gov", "data.epa.gov", "transition.fcc.gov", "images-assets.nasa.gov"])
           .indexOf((url.match(/^https:\/\/([^\/]+)\//) || [])[1]) >= 0)
       url = "/proxy?u=" + encodeURIComponent(url);       // computer preview: tools\serve_preview.ps1 fetches it
     return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); });

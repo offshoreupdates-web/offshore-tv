@@ -11,5 +11,11 @@
 -keep class org.jboss.netty.** { *; }
 -keep class org.slf4j.** { *; }
 -keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }
+# NewPipe Extractor (YouTube backgrounds): its own recommended rules (Rhino compiles YouTube's player code at run time
+# and finds its classes by name), and protobuf-lite reads its message fields by name.
+-keep class org.mozilla.javascript.** { *; }
+-keep class org.mozilla.classfile.ClassFileWriter
+-keep class org.schabi.newpipe.extractor.** { *; }
+-keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
 # Optional parts the libraries reference but never need here (servlets, JMX, logging back-ends, javax.*).
 -dontwarn **

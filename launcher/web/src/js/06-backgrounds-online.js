@@ -190,7 +190,7 @@
   //   aic   Art Institute of Chicago: public-domain works only, pictures from its own IIIF image server
   //   loc   Library of Congress, Photochrom prints (c. 1890-1910 colour travel views, "no known restrictions")
   // Each gives the same [{url, t, a, l, s}] as commonsPhotos; landscape pictures only, checked on a small copy first.
-  var SOURCES = { commons: "Wikimedia Commons", nasa: "NASA", met: "The Met", aic: "Art Institute of Chicago", loc: "Library of Congress" };
+  var SOURCES = { commons: "Wikimedia Commons", nasa: "NASA", met: "The Met", aic: "Art Institute of Chicago", loc: "Library of Congress", yt: "YouTube" };
   function srcName(x) { return SOURCES[(x && x.s) || "commons"] || ""; }
   function wideEnough(url) {                             // a small copy's shape: landscape (1.3 to 2.1 wide), or not
     return new Promise(function (res) {
@@ -266,21 +266,33 @@
       return out;
     });
   }
-  // NASA's videos for live backgrounds: its MP4 copies (the large one, about 1080p), public domain.
+  // NASA's videos for live backgrounds: its MP4 copies, public domain. Each video's file list (collection.json) says
+  // which copies exist: the large one (about 1080p), or the medium one (about 720p) when there's no large. Many
+  // searches turn up videos with neither (aurora: most of them), so they're dropped here rather than failing to play.
+  // The page can't read that list itself (no CORS), so it goes through the app (or the preview's proxy).
   function nasaVideos(cat) {
-    // A video's copies follow a fixed pattern on images-assets.nasa.gov (its file list there can't be read from the page:
-    // no CORS), so the large MP4 (about 1080p) is addressed directly; one that doesn't exist is skipped when it won't play.
-    var clip = function (id, title, center) {
-      var e = encodeURIComponent(id);
-      return { url: "https://images-assets.nasa.gov/video/" + e + "/" + e + "~large.mp4", f: title || id.replace(/_/g, " "), u4: "", mb4: 0, h: 1080,
+    var clip = function (url, id, title, center) {
+      return { url: url, f: title || id.replace(/_/g, " "), u4: "", mb4: 0, h: 1080,
                a: center ? "NASA " + center : cat.name || "NASA", l: "Public domain", s: "nasa" };
     };
-    if (cat.ids) return Promise.resolve(cat.ids.map(function (id) { return clip(id); }));
+    var guess = function (id) { var e = encodeURIComponent(id); return "https://images-assets.nasa.gov/video/" + e + "/" + e + "~large.mp4"; };
+    if (cat.ids) return Promise.resolve(cat.ids.map(function (id) { return clip(guess(id), id); }));
+    var best = function (id) {
+      var e = encodeURIComponent(id);
+      return getJson("https://images-assets.nasa.gov/video/" + e + "/collection.json").then(function (files) {
+        var have = (files || []).map(function (f) { return https(f); });     // listed as plain http, spaces unencoded
+        var pick = function (size) {
+          return have.indexOf("https://images-assets.nasa.gov/video/" + id + "/" + id + "~" + size + ".mp4") >= 0 ? guess(id).replace(/~large\.mp4$/, "~" + size + ".mp4") : null;
+        };
+        return pick("large") || pick("medium") || null;
+      }).catch(function () { return null; });
+    };
     return getJson("https://images-api.nasa.gov/search?media_type=video&page_size=40&q=" + encodeURIComponent(cat.q)).then(function (j) {
-      return ((j.collection && j.collection.items) || []).map(function (it) {
-        var d = (it.data || [])[0] || {};
-        return d.nasa_id && /^[\w .,()-]{3,120}$/.test(d.nasa_id) ? clip(d.nasa_id, d.title, d.center) : null;
-      }).filter(Boolean).slice(0, VID_PER);
+      var items = ((j.collection && j.collection.items) || []).map(function (it) { return (it.data || [])[0] || {}; })
+        .filter(function (d) { return d.nasa_id && /^[\w .,()-]{3,120}$/.test(d.nasa_id); }).slice(0, 24);
+      return Promise.all(items.map(function (d) { return best(d.nasa_id); })).then(function (urls) {
+        return items.map(function (d, i) { return urls[i] ? clip(urls[i], d.nasa_id, d.title, d.center) : null; }).filter(Boolean).slice(0, VID_PER);
+      });
     });
   }
   // ---- Live backgrounds (Settings > Backgrounds, under "Live backgrounds") ----------------------------------
@@ -288,134 +300,455 @@
   // WebM copies, at most 6 per topic, downloaded once and kept on the TV) or videos phones sent. One <video> only (the
   // Cube decodes one stream in hardware). A clip loops until it has run at least the photo time, then fades to the next.
   // Paused whenever an app covers the home screen. A clip that won't play is skipped; if none will, photos come back.
-  // Ambience presets: hand-picked 1080p clips on Commons (looked up by name, so they never drift to news footage or
-  // the like that a search can turn up), in the order they play. Grouped for Settings.
+  // The built-in sets, grouped for Settings in this order. Each clip was checked by eye, from frames across its first
+  // minutes (no on-screen text, logos, people talking to the camera, ordinary streets or murky shots):
+  //  - yt: Creative Commons (CC BY) YouTube videos, [video id, channel (credited on screen), clip name]. Saved on the
+  //    TV, the first 2½ minutes of each, in 1080p (or 4K when chosen). Checked again for the licence when saved.
+  //  - files: Wikimedia Commons clips by file name (so they never drift to news footage a search can turn up),
+  //    streamed. The first plays at once while the YouTube clips download; all of them carry the set on their own
+  //    when YouTube can't be reached.
+  //  - ids / q: NASA's own videos. auto: a set that picks one of the others (the holiday, or today's weather);
+  //    src "near": Creative Commons videos of the TV's town, found by search.
   var VID_TOPICS = [
-    { id: "waves", name: "Beach waves", group: "Beach & ocean", files: ["Ocean waves at Lækjavik beach, Iceland.webm",
-      "Pequeño oleaje sobre Rivera Brava, junto a Faja dos Padres (Madeira, Portugal).webm", "Aerial view of sand beach. Top view sea waves. Drone footage.webm",
-      "Waves-1013354, Dingle Peninsula, Co. Kerry, Ireland.webm", "Rocks and Waves-103779, Dingle Peninsula, Co. Kerry, Ireland.webm"] },
-    { id: "sunset", name: "Sunset by the sea", group: "Beach & ocean", files: ["2022-08-06, Pacific Ocean sunset (Ocean Shores, Washington), 01.webm",
-      "Free video clip - Sunset through Palm Tree.webm", "2022-08-06, Pacific Ocean sunset (Ocean Shores, Washington), 03.webm",
-      "Sunset 2011 ( HD ).webm", "Sunset at the sea of Azov.webm",
-      "Aerial views of the seafront at sunset, Bexhill.webm", "Sunset timelapse on the beach in Libreville, Gabon.webm", "Sunset in Pantai Kukup.webm"] },
-    { id: "tropical", name: "Tropical shores", group: "Beach & ocean", files: [
-      "USVI MVI 5244 - Stone-walled garden with palm trees overlooks the turquoise sea and distant islands under a cloudy sky.webm",
-      "Waves waving at Apollo Beach (Canaveral National Seashore, Florida, GEDC7077).webm",
-      "Puerto Rico - Drone Vieques - Caribbean Island Off the Shore of Puerto Rico.webm",
-      "DJI 0357 - Aerial view of a coastal town nestled among lush green islands with turquoise waters and white buildings under a partly cloudy sky.webm",
-      "Cocoa Beach (May 2023) and Pier.webm"] },
-    { id: "hawaii", name: "Hawaii from above", group: "Beach & ocean", files: [
-      "Hawaii Drone Video, 2023.webm", "Halona Blowhole, Oahu, Hawaii 4K footage.webm"] },
-    { id: "falls", name: "Waterfalls", group: "Nature", files: ["Wasserfall der Laussa kurz vor der Mündung in die Enns.ogv", "Waterfall Bluff.ogv", "Phe Phe falls.webm", "Kullaojan putous 7.webm"] },
-    { id: "lake", name: "Mountain lake", group: "Nature", files: ["Half Way Bay on Lake Okanagan during Golden Hour in Winter.webm",
-      "View of Lake Okanagan from Knox Mountain Park in Winter.webm", "Lala Lake, Romania - 4K Aerial.webm", "Chopaka Lake (28054947691).webm"] },
-    { id: "fire", name: "Cozy fireplace", group: "Cozy", files: ["Fantastic-fireplace-fire-chimney-hearth- background - texture - motion graphics - free video library.webm",
-      "Fireplace 1 2021-02-14.webm", "Outdoor fireplaces 1 2014-04-23.ogv", "Outdoor fireplaces 2 2014-04-23.ogv"] },
-    { id: "rain", name: "Rain on the window", group: "Cozy", files: ["Radevormwald - Raindrops on a window 07 (1) ies.webm",
-      "Radevormwald - Raindrops on a window 08 (1) ies.webm", "Radevormwald - Raindrops on a window 09 (1) ies.webm",
-      "Radevormwald - Raindrops on a window 10 (1) ies.webm", "Radevormwald - Raindrops on a window 11 (1) ies.webm"] },
-    { id: "storm", name: "Thunderstorm", group: "Cozy", files: ["Thunderstorm in Onex - 20062013 - The street.webm", "Début d'un Orage dans les monts d'Ambazac.webm"] },
-    { id: "snowfall", name: "Snowfall", group: "Cozy", files: ["Snow falling in Tuntorp.webm", "Snow on Myrstigen.webm", "Snow timelapse 2014.webm"] },
-    { id: "jelly", name: "Jellyfish", group: "Underwater", files: ["Jellyfish at Monterey Bay Aquarium 5 2017-11-21.webm", "Jellyfish at Monterey Bay Aquarium 13 2017-11-21.webm",
-      "Jellyfish at Monterey Bay Aquarium 11 2017-11-21.webm", "Jellyfish at Monterey Bay Aquarium 1 2017-11-21.webm", "Jellyfish at Monterey Bay Aquarium 4 2017-11-21.webm",
-      "Jellyfish at Monterey Bay Aquarium 6 2024-01-11.webm", "Jellyfish at Monterey Bay Aquarium 8 2024-01-11.webm", "Jellyfish at Monterey Bay Aquarium 1 2024-01-11.webm"] },
-    { id: "aquarium", name: "Aquarium", group: "Underwater", files: ["Exhibits at Monterey Bay Aquarium 12 2017-11-21.webm", "Fish at Monterey Bay Aquarium 1 2024-01-11.webm",
-      "Exhibits at Monterey Bay Aquarium 7 2017-11-21.webm", "Fish at Monterey Bay Aquarium 3 2024-01-11.webm", "Exhibits at Monterey Bay Aquarium 16 2017-11-21.webm",
-      "Sardines reacting to tuna - MBA.webm", "Fish at Monterey Bay Aquarium 4 2024-01-11.webm"] },
-    { id: "clouds", name: "Drifting clouds", group: "Nature", files: ["Timelapse of Clouds over Bellevue Canyon.webm",
-      "Morgen Wolken Zeitraffer - Morning Clouds Timelapse (Royalty Free) (Kostenlos) 4096x2304p 100FPS.webm", "Timelapse-nuages-petit-croix.ogv",
-      "All4sounds - Cloud Time lapse.webm", "Dying Light on Okanagan Mountain.webm"] },
-    { id: "aurora", name: "Northern lights", group: "Nature", files: ["Aurora borealis timelapse.webm", "Aurora Borealis over Spruce Woods, Manitoba.webm",
-      "Aurora Borealis in the steppes of Kazakhstan. October 10, 2024.webm",
-      "Polarlichter Aurora Borealis - Berlin Deutschland.webm"] },
-    { id: "city", name: "City lights", group: "City", files: ["Chicago River time lapse.webm", "Time-lapse and tilt-shift views of Osaka from the observation deck of Umeda Sky Building, Osaka, Japan.webm",
-      "Time-lapse and tilt-shift views of Osaka from the observation deck of Abeno Harukas, Osaka, Japan.webm"] },
-    { id: "xmas", name: "Christmas lights", group: "Holidays & seasons", files: ["Christmas lights - December 2023 - Sarah Stierch.webm", "Rotary Lights La Crosse.webm",
-      "Christmas in Ohio Wonderlights by drone.webm"] },
-    { id: "fireworks", name: "Fireworks", group: "Holidays & seasons", files: ["Fireworks Naperville 2022.webm", "Pittsburgh July 4th 2024 firework celebration aerial view.webm",
-      "Fireworks show.webm", "Fireworks at the Danube.ogv", "Close-up fireworks during Lunar New Year celebration in Zhongshan, China, 2026.webm",
-      "Fogo de artifício do fim do ano no Funchal 2020-2021 - MVI 1263.webm"] },
-    { id: "coast", name: "Coast from above", group: "Beach & ocean", files: ["Drone Flying over Beach in Luquillo, Puerto Rico.webm",
-      "Oregon Coast Odyssey- FPV Drone Captures Stunning Ocean Views.webm",
-      "Drone Flight- Cape Kiwanda, Pacific City, Oregon.webm", "Aerial view of sand beach. Top view sea waves. Drone footage.webm"] },
-    { id: "surf", name: "Surf", group: "Beach & ocean", files: ["Surfing-1012624, Dingle Peninsula, Co. Kerry, Ireland.webm",
-      "Surfing-1012628, Dingle Peninsula, Co. Kerry, Ireland.webm"] },
-    { id: "underwater", name: "Underwater", group: "Underwater", files: ["Black sea underwater life at Sinemorets coast.webm", "School of fish in Myanmar.webm", "Brycon hilarii piraputanga rio prata 01.webm",
-      "Blacktail butterflyfish (Chaetodon austriacus) school, Чернохвостая рыба-бабочка, парочка.DSCF1215.webm", "Meeräschen (Mugilidae) DSCF1748.webm"] },
-    { id: "reef", name: "Coral reef", group: "Underwater", files: [
-      "First records of the species Paracanthurus hepatus at the Chesterfield-Bellona reef complex in the Coral Sea Marine Park (Ifremer 00675-78698).webm",
-      "First record of the species Forcipiger longirostris at the Chesterfield-Bellona reef complex in the Coral Sea Marine Park (Ifremer 00675-78691).webm",
-      "First record of the species Balistoides viridescens at the Chesterfield-Bellona reef complex in the Coral Sea Marine Park (Ifremer 00675-78687).webm",
-      "First record of the species Chilomycterus reticulatus at the Chesterfield-Bellona reef complex in the Coral Sea Marine Park (Ifremer 00675-78690).webm"] },
-    { id: "turtles", name: "Sea turtles", group: "Underwater", files: ["Green sea turtles (Chelonia mydas) in Hawaii.webm",
-      "Aerial view of a green sea turtle (Chelonia mydas) swimming in the reef at Lady Musgrave Island, Queensland, Australia.webm"] },
-    { id: "dolphins", name: "Dolphins & whales", group: "Underwater", files: ["053 Pod of Spinner dolphins swimming in the Indian ocean Video by Giles Laurent.webm",
-      "Spinner dolphins in Hawaii.webm", "Humpback whale Tail Sailing behaviour.webm", "032 Humpback whale lobtailing in slow motion Video by Giles Laurent.webm",
-      "Aerial view of a humpback whale near Gordon's Bay, Sydney, Australia at 24 August 2020.webm", "Antarctic Blue Whales.webm"] },
-    // Holidays & seasons: "seasonal" plays today's set (seasonalTopic); the rest are the holiday sets it picks from.
-    { id: "seasonal", name: "Holidays & seasons (automatic)", group: "Holidays & seasons", auto: true },
-    { id: "valentine", name: "Valentine's Day", group: "Holidays & seasons", files: ["Time-lapse of opening red rose isolated on black background.Blooming red roses flower buds.webm",
-      "Free video clip - Sunset through Palm Tree.webm", "2022-08-06, Pacific Ocean sunset (Ocean Shores, Washington), 01.webm"] },
-    { id: "stpat", name: "St. Patrick's Day (Irish coast)", group: "Holidays & seasons", files: ["Waves-1013354, Dingle Peninsula, Co. Kerry, Ireland.webm",
-      "Rocks and Waves-103779, Dingle Peninsula, Co. Kerry, Ireland.webm", "Surfing-1012624, Dingle Peninsula, Co. Kerry, Ireland.webm"] },
-    { id: "spring", name: "Spring blossoms (Easter)", group: "Holidays & seasons", files: ["Cherry Blossoms Tidal Basin Washington DC 2024-03-24 18-13-40 1.webm",
-      "Park with cherry blossoms, Paris.webm"] },
-    { id: "honor", name: "Flags of honor (Memorial & Veterans Day)", group: "Holidays & seasons", files: ["Washington Monument flags 2022-03-28 18-48-12 1.webm"] },
-    { id: "july4", name: "4th of July", group: "Holidays & seasons", files: ["Independence Day Fireworks, Washington DC (20210704-OC-LSC-0053).webm",
-      "Pittsburgh July 4th 2024 firework celebration aerial view.webm", "Statue Of Liberty 4k Drone.webm",
-      "Fireworks Naperville 2022.webm"] },
-    { id: "flowers", name: "Spring flowers (Mother's Day)", group: "Holidays & seasons", files: ["Cherry Blossoms Tidal Basin Washington DC 2024-03-24 18-13-40 1.webm", "Time-lapse of opening red rose isolated on black background.Blooming red roses flower buds.webm",
-      "Park with cherry blossoms, Paris.webm"] },
-    { id: "halloween", name: "Halloween (pumpkins & stormy nights)", group: "Holidays & seasons", files: ["Début d'un Orage dans les monts d'Ambazac.webm", "Falling autumn leaves.webm"] },
-    { id: "autumn", name: "Autumn leaves (Thanksgiving, Halloween)", group: "Holidays & seasons", files: ["Falling autumn leaves.webm",
-      "Autumnleavesfalling-kanagawa-2022Dec5.webm", "4K Drone Flight over Ephraim Harbor to see the Fall Colors - Door County, WI Oct 2024.webm"] }
+    // Beaches & tropical
+    { id: "waves", name: "Beach waves", group: "Beaches & tropical",
+      yt: [["L86kPEAuiUI","Background Calm","Waves on a pebble beach"],
+           ["G3JD0ytt_cs","Visual Walk","Waves on black rocks"],
+           ["jxprJsRoT04","LocalEyes","Viña del Mar, Chile"],
+           ["bL7raobFj0w","Free Stock Footage","Waves at sunset"],
+           ["KBPavXDw8lw","Free HD Footage","Blue ocean waves"]],
+      files: ["Ocean waves at Lækjavik beach, Iceland.webm",
+        "Pequeño oleaje sobre Rivera Brava, junto a Faja dos Padres (Madeira, Portugal).webm",
+        "Aerial view of sand beach. Top view sea waves. Drone footage.webm",
+        "Waves-1013354, Dingle Peninsula, Co. Kerry, Ireland.webm",
+        "Rocks and Waves-103779, Dingle Peninsula, Co. Kerry, Ireland.webm"] },
+    { id: "tropical", name: "Tropical islands", group: "Beaches & tropical",
+      yt: [["lDfOA6K2myA","Stocks Shares","Jungle coast from above"],
+           ["DXFZEru9080","Video Library - Copyright Free Video Foo","Reef island from above"],
+           ["NQPjnZDA-Xc","Dronestock Library","Turquoise coast"],
+           ["obz9eM0jDpw","Den Sep","Honolulu beaches"],
+           ["0veY2s8GMbg","ORANGE 4K","Maldives resort"]],
+      files: ["USVI MVI 5244 - Stone-walled garden with palm trees overlooks the turquoise sea and distant islands under a cloudy sky.webm",
+        "Waves waving at Apollo Beach (Canaveral National Seashore, Florida, GEDC7077).webm",
+        "Puerto Rico - Drone Vieques - Caribbean Island Off the Shore of Puerto Rico.webm",
+        "DJI 0357 - Aerial view of a coastal town nestled among lush green islands with turquoise waters and white buildings under a partly cloudy sky.webm",
+        "Cocoa Beach (May 2023) and Pier.webm"] },
+    { id: "sunset", name: "Sunset by the sea", group: "Beaches & tropical",
+      yt: [["xiK4KqZkXbY","The Collection","Waves in the sunset"],
+           ["WMhM9rexNi8","All About Background","Golden sun on the sea"],
+           ["vuNT_PU8Tv4","2160p 60fps","Sunset clouds"],
+           ["BCmhdAFYcGU","Johnny MashUp","Sunset over islands"],
+           ["9MkWWjGNbNc","Beauty of Nature - Nature Gallery","Sunset over the hills"]],
+      files: ["2022-08-06, Pacific Ocean sunset (Ocean Shores, Washington), 01.webm",
+        "Free video clip - Sunset through Palm Tree.webm",
+        "2022-08-06, Pacific Ocean sunset (Ocean Shores, Washington), 03.webm",
+        "Sunset 2011 ( HD ).webm",
+        "Sunset at the sea of Azov.webm",
+        "Aerial views of the seafront at sunset, Bexhill.webm",
+        "Sunset timelapse on the beach in Libreville, Gabon.webm",
+        "Sunset in Pantai Kukup.webm"] },
+    { id: "coast", name: "Coasts from above", group: "Beaches & tropical",
+      yt: [["lRVLSJuVc2o","Lens of SEA _ Camera, Drone, Cinematogra","Crete's coast"],
+           ["6IXth-PSe9k","IFDC","Australian coast"],
+           ["benWX0ECZqQ","IFDC","Coast at dusk"],
+           ["MuiJ5h2SJGI","Free Stock Footage","Waves on cliffs"]],
+      files: ["Drone Flying over Beach in Luquillo, Puerto Rico.webm",
+        "Oregon Coast Odyssey- FPV Drone Captures Stunning Ocean Views.webm",
+        "Drone Flight- Cape Kiwanda, Pacific City, Oregon.webm",
+        "Aerial view of sand beach. Top view sea waves. Drone footage.webm"] },
+    { id: "hawaii", name: "Hawaii from above", group: "Beaches & tropical",
+      files: ["Hawaii Drone Video, 2023.webm",
+        "Halona Blowhole, Oahu, Hawaii 4K footage.webm",
+        "North Shore Hawaii filmed with a drone.webm",
+        "‘Āina (Hawaii).webm"] },
+    // Underwater & sea life
+    { id: "reef", name: "Coral reef", group: "Underwater & sea life",
+      yt: [["9PjLy9UZX7g","Alpine Visions 4K","Coral reef"],
+           ["zKMcLgVIhRY","The Keeper","Reef aquarium"],
+           ["bn1zG31Zlb8","Relaxing Nature Videos","Underwater life"],
+           ["eY0OSRJ5zy4","Simon's travel channel","Coral fish aquarium"]],
+      files: ["First records of the species Paracanthurus hepatus at the Chesterfield-Bellona reef complex in the Coral Sea Marine Park (Ifremer 00675-78698).webm",
+        "First record of the species Forcipiger longirostris at the Chesterfield-Bellona reef complex in the Coral Sea Marine Park (Ifremer 00675-78691).webm",
+        "First record of the species Balistoides viridescens at the Chesterfield-Bellona reef complex in the Coral Sea Marine Park (Ifremer 00675-78687).webm",
+        "First record of the species Chilomycterus reticulatus at the Chesterfield-Bellona reef complex in the Coral Sea Marine Park (Ifremer 00675-78690).webm"] },
+    { id: "jelly", name: "Jellyfish", group: "Underwater & sea life",
+      files: ["Jellyfish at Monterey Bay Aquarium 5 2017-11-21.webm",
+        "Jellyfish at Monterey Bay Aquarium 13 2017-11-21.webm",
+        "Jellyfish at Monterey Bay Aquarium 11 2017-11-21.webm",
+        "Jellyfish at Monterey Bay Aquarium 1 2017-11-21.webm",
+        "Jellyfish at Monterey Bay Aquarium 4 2017-11-21.webm",
+        "Jellyfish at Monterey Bay Aquarium 6 2024-01-11.webm",
+        "Jellyfish at Monterey Bay Aquarium 8 2024-01-11.webm",
+        "Jellyfish at Monterey Bay Aquarium 1 2024-01-11.webm"] },
+    { id: "aquarium", name: "Aquarium", group: "Underwater & sea life",
+      files: ["Exhibits at Monterey Bay Aquarium 12 2017-11-21.webm",
+        "Fish at Monterey Bay Aquarium 1 2024-01-11.webm",
+        "Exhibits at Monterey Bay Aquarium 7 2017-11-21.webm",
+        "Fish at Monterey Bay Aquarium 3 2024-01-11.webm",
+        "Exhibits at Monterey Bay Aquarium 16 2017-11-21.webm",
+        "Sardines reacting to tuna - MBA.webm",
+        "Fish at Monterey Bay Aquarium 4 2024-01-11.webm"] },
+    { id: "turtles", name: "Sea turtles", group: "Underwater & sea life",
+      files: ["Green sea turtles (Chelonia mydas) in Hawaii.webm",
+        "Aerial view of a green sea turtle (Chelonia mydas) swimming in the reef at Lady Musgrave Island, Queensland, Australia.webm"] },
+    { id: "dolphins", name: "Dolphins & whales", group: "Underwater & sea life",
+      yt: [["-GuGPLfhX9g","Aaron Lynton","Humpback whales, Mo'orea"]],
+      files: ["053 Pod of Spinner dolphins swimming in the Indian ocean Video by Giles Laurent.webm",
+        "Spinner dolphins in Hawaii.webm",
+        "Humpback whale Tail Sailing behaviour.webm",
+        "032 Humpback whale lobtailing in slow motion Video by Giles Laurent.webm",
+        "Aerial view of a humpback whale near Gordon's Bay, Sydney, Australia at 24 August 2020.webm",
+        "Antarctic Blue Whales.webm"] },
+    { id: "underwater", name: "Underwater", group: "Underwater & sea life",
+      files: ["Black sea underwater life at Sinemorets coast.webm",
+        "School of fish in Myanmar.webm",
+        "Brycon hilarii piraputanga rio prata 01.webm",
+        "Blacktail butterflyfish (Chaetodon austriacus) school, Чернохвостая рыба-бабочка, парочка.DSCF1215.webm",
+        "Meeräschen (Mugilidae) DSCF1748.webm",
+        "Blue Holes auf den Bahamas (CC BY 4.0).webm"] },
+    // Wildlife & animals
+    { id: "safari", name: "African safari", group: "Wildlife & animals",
+      yt: [["VsoACNCVuMw","Jukka Lämsä","Giraffes in the Masai Mara"],
+           ["pGTTzWQKIFQ","FOCUS ON FOCUS","Lions, hippos and elephants"],
+           ["EbyEJLle9co","4k Nature relaxation video","African wildlife"]] },
+    { id: "birds", name: "Birds & forest animals", group: "Wildlife & animals",
+      yt: [["MNGWtVPGckg","Birds of a Midwest Paradise","Sparrows at a bird bath"],
+           ["VgSTxAW5QBI","MicrophonicFool","Hummingbirds"],
+           ["uP5KiwoFJG4","Lennart Hessel","Imperial eagle"],
+           ["v0H2MksobyQ","Kevin Russell","Birds at a feeder"],
+           ["Ua-P45vOltw","Krogmann","Squirrels in the forest"]] },
+    // Nature
+    { id: "mountains", name: "Mountains", group: "Nature",
+      yt: [["vhpOhHEhVOg","HikingFex","Snowy peaks"],
+           ["QJULJ9neZsI","Joeys Journeys","Interlaken, Switzerland"],
+           ["NrIgWB2TPuM","Zen view","Mount Parnon, Greece"],
+           ["ynrv5BhUD0k","Free Stock Footage","Misty green mountains"]] },
+    { id: "lake", name: "Mountain lakes", group: "Nature",
+      yt: [["UZ7BDrL2n5g","DRONE EXPLORER - Relaxing sound & Aerial","Fog over a Swedish lake"],
+           ["vg5PXhbryg4","Joeys Journeys","Lake Brienz, Switzerland"],
+           ["FkoqkxoisOo","Andrei Ceban","Mirror lake at sunrise"],
+           ["ygNifgRhLQc","Travel Kevin BKH","Mirror Lake, Utah"]],
+      files: ["Half Way Bay on Lake Okanagan during Golden Hour in Winter.webm",
+        "View of Lake Okanagan from Knox Mountain Park in Winter.webm",
+        "Lala Lake, Romania - 4K Aerial.webm",
+        "Chopaka Lake (28054947691).webm"] },
+    { id: "forest", name: "Forests", group: "Nature",
+      yt: [["1ejsQR_eARU","4K4FREE","Forests from above"],
+           ["4UQAPzpl-Ic","IFDC","Australian forest from above"],
+           ["MJ_s8ARJC8A","4K Drone Footage HD","Endless pine forest"],
+           ["swtkgALrYRc","Royalty free Clips","Forest road from above"],
+           ["fjgGz6Bugew","2022 Royalty Free Music for Free","Green forest"]] },
+    { id: "falls", name: "Waterfalls", group: "Nature",
+      yt: [["XRIxpKKz7uI","Video Library - Copyright Free Video Foo","Mossy waterfall"],
+           ["MAN2OIeP9TA","Free Stock Footage","Waterfall with a rainbow"],
+           ["ukdY3dQMaeU","PureSpore","Seljalandsfoss in ice, Iceland"],
+           ["xhrZGS4BZ-c","Nature Sounds","Waterfall in the forest"]],
+      files: ["Wasserfall der Laussa kurz vor der Mündung in die Enns.ogv",
+        "Waterfall Bluff.ogv",
+        "Phe Phe falls.webm",
+        "Kullaojan putous 7.webm"] },
+    { id: "autumn", name: "Autumn colours", group: "Nature",
+      yt: [["ybmlkZ-3FPY","Pure Adirondacks","Adirondack fall colours"],
+           ["XOVaCUzYnQ8","Freestocks","Autumn treetops"],
+           ["AN_KMk8CIP0","Russell West Productions | RWP","Algonquin Park, Ontario"],
+           ["HOZbwRo72o4","Dronestock Library","New England meadow"],
+           ["zXhNEwtZQ3Y","Dronestock Library","New England hills"]],
+      files: ["Falling autumn leaves.webm",
+        "Autumnleavesfalling-kanagawa-2022Dec5.webm",
+        "4K Drone Flight over Ephraim Harbor to see the Fall Colors - Door County, WI Oct 2024.webm"] },
+    { id: "flowers", name: "Flowers & blossoms", group: "Nature",
+      yt: [["uljF0Pg6cLM","No Copyright Videos","Cherry blossoms"],
+           ["76vJQmZuE_s","NoCopyright Video Lib","Rapeseed field"],
+           ["_xpZcO79u0U","Free Clips 4k","Spring garden"],
+           ["7EqDPLmSCc8","Free Stock Footage","Blue wildflowers"]],
+      files: ["Cherry Blossoms Tidal Basin Washington DC 2024-03-24 18-13-40 1.webm",
+        "Time-lapse of opening red rose isolated on black background.Blooming red roses flower buds.webm",
+        "Park with cherry blossoms, Paris.webm"] },
+    // Weather
+    { id: "weather", name: "Today's weather", group: "Weather", auto: "wx" },
+    { id: "storm", name: "Thunderstorms", group: "Weather",
+      yt: [["XpWBMmutQ4Q","Jim Vajda","Storms at sunset"],
+           ["zKaIrk437Xs","Jim Vajda","Sunset into lightning"],
+           ["xkhrgkp6dd4","Watching Nature — Relaxing & Free Stock ","Thunder clouds over a forest"],
+           ["lfDDC29nf-s","Harborside Photography","Lightning over Fort Myers"]],
+      files: ["Thunderstorm in Onex - 20062013 - The street.webm",
+        "Début d'un Orage dans les monts d'Ambazac.webm"] },
+    { id: "rainfall", name: "Rain", group: "Weather",
+      yt: [["TatD16J7f2I","Montreal Walking Tours","Rain on tropical leaves"],
+           ["t7P1PDjNCy8","AllInOne Relax Videos","Costa Rican rainforest"],
+           ["PlLkMISegAE","Relaxing music for you","Rain on grass"],
+           ["q0aAYAX6FOc","في رحاب المزرعة","Tropical rain"]] },
+    { id: "snowfall", name: "Snowfall", group: "Weather",
+      yt: [["glo6I_qCkC8","Watching Nature — Relaxing & Free Stock ","Heavy snowfall"],
+           ["ga1_J72Na4k","Watching Nature — Relaxing & Free Stock ","Snow on spruce trees"],
+           ["KveB4uN5URE","HikingFex","Snowy mountains"],
+           ["GbAb1LFRd8Y","Deep Nature Sounds","Snowy forest path"]],
+      files: ["Snow falling in Tuntorp.webm",
+        "Snow on Myrstigen.webm",
+        "Snow timelapse 2014.webm"] },
+    { id: "fog", name: "Fog & mist", group: "Weather",
+      yt: [["PkvpzP77cKQ","The Collection","Mist in the valley"],
+           ["y81chIEHq2w","DroneWorldHD","Fog over the mountains"],
+           ["etU1i111V4Q","Earth Explorer","Fog over a river"],
+           ["i0yoA6C_nvc","The Collection","Hoarfrost in fog"]] },
+    { id: "clouds", name: "Drifting clouds", group: "Weather",
+      yt: [["ZJjYB-hWxMc","fireflyjack","Sunny day clouds"],
+           ["iQCIjiZJNzs","Video Library - Copyright Free Video Foo","Clouds and sun rays"],
+           ["wNsGrCiuhyY","Mateusz Ptak","White clouds drifting"]],
+      files: ["Timelapse of Clouds over Bellevue Canyon.webm",
+        "Morgen Wolken Zeitraffer - Morning Clouds Timelapse (Royalty Free) (Kostenlos) 4096x2304p 100FPS.webm",
+        "Timelapse-nuages-petit-croix.ogv",
+        "All4sounds - Cloud Time lapse.webm",
+        "Dying Light on Okanagan Mountain.webm"] },
+    { id: "snowpeaks", name: "Snowy mountains", group: "Weather",
+      yt: [["vhpOhHEhVOg","HikingFex","Snowy peaks"],
+           ["w8LpbxcI6Bw","anotherview","Frozen Norway"],
+           ["xLHhNwXiTo4","Free Stock Videos 4K","Swiss Alps in winter"]] },
+    // Sky & space
+    { id: "aurora", name: "Northern lights", group: "Sky & space",
+      yt: [["oenDo3mh59E","Eladio Arvelo","Northern lights, Iceland"],
+           ["RdD1NgAwfLg","Terje Nesthus","Northern lights, Voss"],
+           ["djt_-LkF38A","Terje Nesthus","Northern lights over town"],
+           ["VQw4lQWsti8","Terje Nesthus","Northern lights over the valley"]],
+      files: ["Aurora borealis timelapse.webm",
+        "Aurora Borealis over Spruce Woods, Manitoba.webm",
+        "Aurora Borealis in the steppes of Kazakhstan. October 10, 2024.webm",
+        "Polarlichter Aurora Borealis - Berlin Deutschland.webm"] },
+    { id: "stars", name: "Starry nights", group: "Sky & space",
+      yt: [["1zA9pC3ULwQ","Nature Clips Free","Milky Way over a lone tree"],
+           ["36cMQEoOoqQ","Okan Bozat","Milky Way, New Zealand"],
+           ["fkNFIuzjqpI","Mihail-Gabriel Barbuta","Milky Way, Retezat mountains"]] },
+    { id: "nasa-iss", name: "Earth from the space station", group: "Sky & space", src: "nasa", q: "earth views",
+      ids: ["NHQ_2020_1221_Earth Views","Earth Views from the International Space Station","jsc2021m000138_4K_Earth_Views_Extended_Cut_for_Earth_Day_ 2021_210422-4KMP4"] },
+    { id: "nasa-sun", name: "The Sun up close", group: "Sky & space", src: "nasa", q: "solar dynamics observatory",
+      ids: ["GSFC_20170211_SDO_m12500_Year7","GSFC_20160212_SDO_m12144_Year6","GSFC_20160624_SDO_m12292_TwistingSolarMaterial"] },
+    // Cities
+    { id: "near", name: "Near you", group: "Cities", src: "near" },
+    { id: "city", name: "Cities at night", group: "Cities",
+      yt: [["FiA5Puf7ZKw","AJChimaera","Storm over Sydney Harbour"],
+           ["DSs7yNgDuDo","Shifar's Earth Vibes","Night traffic"],
+           ["jTFAseOjFEs","The Collection","Highway lights at night"],
+           ["sLOfqC8cxRY","101GreenLight TV","City lights"]],
+      files: ["Chicago River time lapse.webm",
+        "Time-lapse and tilt-shift views of Osaka from the observation deck of Umeda Sky Building, Osaka, Japan.webm",
+        "Time-lapse and tilt-shift views of Osaka from the observation deck of Abeno Harukas, Osaka, Japan.webm"] },
+    { id: "skylines", name: "City skylines", group: "Cities",
+      yt: [["zpN05qWxhqU","SkyWave Free Footage","Chicago from above"],
+           ["pycz54en1FQ","SkyWave Free Footage","Sydney Harbour"],
+           ["2OJYVKDRxyU","XplorerFilms","Seattle skyline"],
+           ["guCR0znBFXE","Our Planet By Drone","City towers"]],
+      files: ["Chicago Day and Night.webm",
+        "Chicago Skyline from Museum Campus.webm",
+        "Shanghai Bund, Lujiazui Skyline Timelapse.webm",
+        "San Francisco vue aerienne.ogv",
+        "Eiffel Tower Drone 4k-Qx c1X3zfEc-313-251.webm"] },
+    { id: "nyc", name: "New York from above", group: "Cities",
+      files: ["Aerial views of Midtown Manhattan, New York City, USA.webm",
+        "Aerial views of Central Park Tower, 220 Central Park South (Billionaires Row) and Upper West Side Manhattan, New York City, USA.webm",
+        "Aerial views of Hells Kitchen and East Midtown Manhattan in New York City, USA at night.webm"] },
+    { id: "vegas", name: "Las Vegas at night", group: "Cities",
+      files: ["Aerial views of Las Vegas, Nevada, USA at sunset including The Bellagio Fountain Hotel and Casino, Flamingo, High Roller Observation Wheel and Treasure Island.webm",
+        "Aerial views of Las Vegas Strip, Nevada, USA at twilight including The Bellagio Casino Hotel and Resort fountain and light show.webm",
+        "Aerial views of Las Vegas Strip, Nevada, USA at night including The Bellagio, The Flamingo, MGM Grand Hotel, Caesars Palace, The Cosmopolitan, Mirage Hotel and Casino and the Venetian Palazzo Resort Casino.webm"] },
+    // Aerial world tour
+    { id: "world", name: "Around the world", group: "Aerial world tour",
+      yt: [["ATpLB-3bofA","Baschir Zekar","Japan from above"],
+           ["2X0g_1ptYmQ","LuciannFilm","Krka, Croatia"],
+           ["3MWNkt-1ch8","Footage123","Glacier river, New Zealand"],
+           ["v5Zyp9cD0ms","Ryabik OFF","Lviv, Ukraine"],
+           ["-vY7bnEowxA","Zen view","Nuremberg, Germany"],
+           ["M7F0legVyYw","Nikolaos Sakellaris","Bucharest, Romania"]],
+      files: ["2018-09-25 Santa Maria della Salute (Venice) Grand Canal.webm",
+        "Machu-Pichu (video 2011).webm",
+        "Aerial imagery of fjords and rivers in Arctic Norway.webm",
+        "Canal Grande MVI 0675.webm",
+        "Time-lapse of Patagonia, Argentina.webm",
+        "Montoj apud Maĉupikĉuo.webm"] },
+    { id: "iceland", name: "Iceland", group: "Aerial world tour",
+      yt: [["P1OirtBmZlE","Great Lakes Yachting","Iceland's canyons"],
+           ["mi8ZnBOAZ1A","Artur Tomal","Iceland from above"],
+           ["5L17g5IzRkk","The Conscious Dreamers","Iceland's black beaches"],
+           ["Awr06wxG77Q","Skorcio","Iceland's coast"]],
+      files: ["Goðafoss waterfall in Northern Iceland.webm",
+        "Dettifoss waterfall in Northern Iceland.webm",
+        "Glanni waterfalls in northern Iceland.webm",
+        "Gullfoss waterfall in Iceland.webm",
+        "Sveinsstekksfoss waterfall in Eastern Iceland.webm",
+        "Waterfall in Kolugljúfur canyon in Northern Iceland.webm"] },
+    { id: "alps", name: "Swiss Alps", group: "Aerial world tour",
+      yt: [["-y11clnPWVY","Free Clips 4k","Engelberg"],
+           ["THBv1oZ3S2E","Free Clips 4k","Furka Pass"],
+           ["fG6MMSiVXa8","Greenwood Wandering","Swiss valleys"]],
+      files: ["Aerial views of the Swiss Alps.webm",
+        "Timelapse of Swiss mountains.webm",
+        "Aerial views of Fronalpstock, Schwyzer Alps, Switzerland.webm",
+        "Italy and Switzerland by Drone.webm"] },
+    { id: "norway", name: "Norway's fjords", group: "Aerial world tour",
+      yt: [["YgAoxhk5jMk","Drone Videos","Fjord from above"],
+           ["fjeiHS3i6xE","Alfarnes","Fjord ferry"],
+           ["fPuny4rZHSg","CaptainsVoyage by Captain Bank","Cruise ship in a fjord"],
+           ["H46z30F9Cbs","Lucco","Norway's fjords"]] },
+    { id: "japan", name: "Japan", group: "Aerial world tour",
+      yt: [["ATpLB-3bofA","Baschir Zekar","Japan from above"],
+           ["HHfqcpwS0Cs","JCCR (Japanese Camp Gear Review)","Japan's coast"],
+           ["6MyP5c9qUKA","One Eight Film","Japanese islands"]] },
+    // National parks & wonders
+    { id: "niagara", name: "Niagara Falls", group: "National parks & wonders",
+      files: ["Niagara Falls Time Lapse.webm",
+        "Rainbow over Niagara Falls in Canada.webm",
+        "Niagara waterfalls with rainbow 2015.webm",
+        "Video of Niagara Falls in Spring 2026.webm",
+        "From the base of Niagara Falls, Spring 2026.webm"] },
+    { id: "canyon", name: "Grand Canyon & desert", group: "National parks & wonders",
+      files: ["Grand Canyon Clouds time lapse VP8.webm",
+        "Delicate Arch Sunset.webm",
+        "Pan of the Grand Canyon.webm",
+        "Time lapse of Monument Valley, Navajo Tribal Park 1080p.webm",
+        "UTAH 4K (DJI MAVIC PRO).webm",
+        "Mittens Time Lapse.webm"] },
+    { id: "yellowstone", name: "Yellowstone", group: "National parks & wonders",
+      files: ["Opal Pool (Midway Geyser Basin, Yellowstone National Park) 2021-08-10.webm",
+        "Lower Geyser Basin, Yellowstone National Park.webm",
+        "Canary Spring (Mammoth Hot Springs, Yellowstone National Park) 2021-08-09.webm"] },
+    { id: "yosemite", name: "Yosemite", group: "National parks & wonders",
+      files: ["Sunset on Halfdome timelapse Yosemite CA 2023-07-15 20-11-06 1.webm",
+        "Yosemite Upper Falls high flow Yosemite CA 2023-07-13 14-42-17 1.webm",
+        "Bridalveil Falls from Valley View Yosemite CA 2023-07-13 18-05-30 1.webm"] },
+    { id: "glaciers", name: "Glaciers & mountains", group: "National parks & wonders",
+      files: ["Lamplugh Glacier timelapse.webm",
+        "Time-lapse of Mount Rainier, Washington, USA.webm",
+        "Reid Glacier in Alaska.webm"] },
+    // Scenic drives & trains
+    { id: "drive", name: "Scenic drives", group: "Scenic drives & trains",
+      yt: [["k-2oddL7SOg","Vandrownik · Norway Scenic Drives","Voss Valley, Norway"],
+           ["cA4NxKDLZuk","Open Road Vistas","Central California"],
+           ["6gaVjVC3Ngk","Pure Drive ASMR","Country roads, Poland"]] },
+    { id: "train", name: "Train windows", group: "Scenic drives & trains",
+      yt: [["zLy2zmNOkLU","Maverick","Train through farmland"],
+           ["HJFRnDrhmvE","4K Nature HD","Train through green fields"],
+           ["7rD_gL-1JAo","4K Japan","Train in Japan"]] },
+    { id: "flight", name: "Above the clouds", group: "Scenic drives & trains",
+      yt: [["RZ6PiOmlSOY","Ambient Video Backdrops","Wing above the clouds"],
+           ["AQteClZ68C8","Freestocks","Clouds from a plane"],
+           ["ILGHJWvSbOM","No Copyright Videos","Sea of clouds"],
+           ["HYXjdNHAbmE","[Culture Snap]","Sunset from a plane"]] },
+    // Sports
+    { id: "surf", name: "Surf", group: "Sports",
+      yt: [["cnt7DbQDttQ","Aaron Lynton","Big waves at Jaws, Maui"],
+           ["kHAr_3l8o_Q","Copyright Free Videos","Surfer on a wave"],
+           ["amFHxh55-BE","Kohelix Cam","Surfing from above"],
+           ["P2bL4MyxJQw","MonteCarlo Elegance","Broken Head, Australia"]],
+      files: ["Surfing-1012624, Dingle Peninsula, Co. Kerry, Ireland.webm",
+        "Surfing-1012628, Dingle Peninsula, Co. Kerry, Ireland.webm"] },
+    { id: "stadium", name: "Stadiums", group: "Sports",
+      yt: [["T-Tc4kx25SE","Chris Cafiero","Ohio Stadium"],
+           ["Z-z08Gcck8Q","Kevin Lomprez","Stade de France"],
+           ["wn3DEfpUn7s","flyviz","Kuala Lumpur stadium"]] },
+    { id: "ski", name: "Ski slopes", group: "Sports",
+      yt: [["8nCUy9fr3xM","BHF AKA Storm Chaser Bowser","Heavenly ski run"],
+           ["_WsmDCTjPno","Denis Trofimov","Snowcat skiing"],
+           ["_2sNwPR3__U","Szabolcs Veres-Lakos","Kopaonik slopes"]] },
+    { id: "golf", name: "Golf courses", group: "Sports",
+      yt: [["2gOyV-wZjfw","FlyOverGreen","Estoril, Portugal"],
+           ["P9L4HVHrVB4","FlyOverGreen","Cannes, France"],
+           ["QYIG6EMlh7g","FlyOverGreen","Penha Longa, Portugal"],
+           ["14okFZFO5Lo","FlyOverGreen","Laguna course"]] },
+    // Cozy
+    { id: "fire", name: "Cozy fireplace", group: "Cozy",
+      yt: [["LGNZteltw94","Dope Gameplays","Log fire"],
+           ["VWEw-eNsrqg","Cozy Woods","Birchwood fire"],
+           ["e3ko08o8rxU","Fireplace for You","Brick fireplace"],
+           ["u6ChWgQo5Wc","Relaxing & Satisfying","Fire close up"]],
+      files: ["Fantastic-fireplace-fire-chimney-hearth- background - texture - motion graphics - free video library.webm",
+        "Fireplace 1 2021-02-14.webm",
+        "Outdoor fireplaces 1 2014-04-23.ogv",
+        "Outdoor fireplaces 2 2014-04-23.ogv"] },
+    { id: "rain", name: "Rain on the window", group: "Cozy",
+      yt: [["8SJta2DfemI","Rain Channel","Rain streaks on a window"],
+           ["WPYnqU0SwUA","storybyphil","Rain at night"],
+           ["yyRYBXSWFC8","Dreamscapes","Rain on a window"],
+           ["K5lViGxvYAU","No Copyright 4K Footage","Raindrops"],
+           ["vHJrCtvGOsY","Best Relaxing Vibes","Rain by the window"]],
+      files: ["Radevormwald - Raindrops on a window 07 (1) ies.webm",
+        "Radevormwald - Raindrops on a window 08 (1) ies.webm",
+        "Radevormwald - Raindrops on a window 09 (1) ies.webm",
+        "Radevormwald - Raindrops on a window 10 (1) ies.webm",
+        "Radevormwald - Raindrops on a window 11 (1) ies.webm"] },
+    // Abstract & art
+    { id: "abstract", name: "Flowing colour", group: "Abstract & art",
+      yt: [["htXe0ybca1U","MOODY RAW SCREENS","Liquid gold"],
+           ["TwOiSwTcyBw","ALIVE SCREENS - Motion Backgrounds and V","Golden spiral"],
+           ["ppp03Rj4fXM","Free Dream Vault","Silk waves"],
+           ["N7qBXaGSYF4","Free Dream Vault","Neon waves"]] },
+    { id: "ink", name: "Ink in water", group: "Abstract & art",
+      yt: [["Vk10zNYBCUg","No Copyright Everything","Pink ink"],
+           ["f1W8dNtwjpo","VAVDO","Yellow ink"],
+           ["Zf03tvr5X4I","VAVDO","Blue ink"],
+           ["JYdvwp211kI","Free Stock Footage","Ink around a rose"]] },
+    { id: "tvart", name: "Framed paintings", group: "Abstract & art",
+      yt: [["fxtFTmHDGQQ","Leaf Avenue Art","Spring flowers painting"],
+           ["RjUGI3J5CZY","Leaf Avenue Art","Flower garden painting"],
+           ["_8zGyda5jAc","TV Art by Leaf Avenue – Scenic Gallery 4","Moonlit winter forest"],
+           ["1WVSCk0qfIQ","TV Art by Leaf Avenue – Scenic Gallery 4","Cherry blossom path"],
+           ["67AaiLGOkg4","TV Art by Leaf Avenue – Scenic Gallery 4","Cherry tree painting"]] },
+    // Holidays & seasons
+    { id: "seasonal", name: "Holidays & seasons", group: "Holidays & seasons", auto: true },
+    { id: "xmas", name: "Christmas lights", group: "Holidays & seasons",
+      yt: [["3ipwxMZUnI0","Silver Serpent5","Christmas lights"],
+           ["GTwU5h48e8Q","Free Dream Vault","Christmas tree lights"]],
+      files: ["Christmas lights - December 2023 - Sarah Stierch.webm",
+        "Rotary Lights La Crosse.webm",
+        "Christmas in Ohio Wonderlights by drone.webm"] },
+    { id: "fireworks", name: "Fireworks", group: "Holidays & seasons",
+      yt: [["lBCvs-uzt3A","VFX Library","Colourful fireworks"],
+           ["rqHXZ1rhvdk","ORANGE 4K","Red fireworks"],
+           ["nLrLUFb_vDg","Mário J.R. Matos","Curtain of sparks"]],
+      files: ["Fireworks Naperville 2022.webm",
+        "Pittsburgh July 4th 2024 firework celebration aerial view.webm",
+        "Fireworks show.webm",
+        "Fireworks at the Danube.ogv",
+        "Close-up fireworks during Lunar New Year celebration in Zhongshan, China, 2026.webm",
+        "Fogo de artifício do fim do ano no Funchal 2020-2021 - MVI 1263.webm"] },
+    { id: "halloween", name: "Halloween", group: "Holidays & seasons",
+      yt: [["3yH08xUDMxo","ALIVE SCREENS - Motion Backgrounds and V","Jack-o'-lantern"],
+           ["8zB4B_DG09Q","Clip Craft Media","Pumpkins in a graveyard"],
+           ["ZkMYBe9RnPI","Clip Craft Media","Haunted house"],
+           ["MSdQV-9c_AE","ALIVE SCREENS - Motion Backgrounds and V","Full moon in fog"],
+           ["Knuei3C4IDY","To The Moon Filmworks","Pumpkin patch"]],
+      files: ["Début d'un Orage dans les monts d'Ambazac.webm",
+        "Falling autumn leaves.webm",
+        "Autumnleavesfalling-kanagawa-2022Dec5.webm"] },
+    { id: "spring", name: "Spring blossoms (Easter)", group: "Holidays & seasons",
+      yt: [["YQBy3M2r4Go","Free Stock Footage 4K","Cherry blossoms opening"],
+           ["uljF0Pg6cLM","No Copyright Videos","Cherry blossoms"]],
+      files: ["Cherry Blossoms Tidal Basin Washington DC 2024-03-24 18-13-40 1.webm",
+        "Park with cherry blossoms, Paris.webm"] },
+    { id: "valentine", name: "Valentine's Day", group: "Holidays & seasons",
+      files: ["Time-lapse of opening red rose isolated on black background.Blooming red roses flower buds.webm",
+        "Free video clip - Sunset through Palm Tree.webm",
+        "2022-08-06, Pacific Ocean sunset (Ocean Shores, Washington), 01.webm"] },
+    { id: "stpat", name: "St. Patrick's Day (Irish coast)", group: "Holidays & seasons",
+      files: ["Waves-1013354, Dingle Peninsula, Co. Kerry, Ireland.webm",
+        "Rocks and Waves-103779, Dingle Peninsula, Co. Kerry, Ireland.webm",
+        "Surfing-1012624, Dingle Peninsula, Co. Kerry, Ireland.webm"] },
+    { id: "honor", name: "Flags of honor (Memorial & Veterans Day)", group: "Holidays & seasons",
+      files: ["Washington Monument flags 2022-03-28 18-48-12 1.webm",
+        "Washington Monument base sunrise 2023-05-07 06-09-51 1.webm"] },
+    { id: "july4", name: "4th of July", group: "Holidays & seasons",
+      yt: [["lBCvs-uzt3A","VFX Library","Colourful fireworks"]],
+      files: ["Independence Day Fireworks, Washington DC (20210704-OC-LSC-0053).webm",
+        "Pittsburgh July 4th 2024 firework celebration aerial view.webm",
+        "Statue Of Liberty 4k Drone.webm",
+        "Fireworks Naperville 2022.webm"] }
   ];
-  // Every clip was checked by eye on a contact sheet (no on-screen text, logos, crowds, ordinary streets or murky shots).
-  VID_TOPICS.push(
-    { id: "niagara", name: "Niagara Falls", group: "National parks & wonders", files: ["Niagara Falls Time Lapse.webm", "Rainbow over Niagara Falls in Canada.webm",
-      "Niagara waterfalls with rainbow 2015.webm", "Video of Niagara Falls in Spring 2026.webm", "From the base of Niagara Falls, Spring 2026.webm"] },
-    { id: "canyon", name: "Grand Canyon & desert", group: "National parks & wonders", files: ["Grand Canyon Clouds time lapse VP8.webm", "Delicate Arch Sunset.webm",
-      "Pan of the Grand Canyon.webm", "Time lapse of Monument Valley, Navajo Tribal Park 1080p.webm", "UTAH 4K (DJI MAVIC PRO).webm", "Mittens Time Lapse.webm"] },
-    { id: "yellowstone", name: "Yellowstone", group: "National parks & wonders", files: ["Opal Pool (Midway Geyser Basin, Yellowstone National Park) 2021-08-10.webm",
-      "Lower Geyser Basin, Yellowstone National Park.webm", "Canary Spring (Mammoth Hot Springs, Yellowstone National Park) 2021-08-09.webm"] },
-    { id: "yosemite", name: "Yosemite", group: "National parks & wonders", files: ["Sunset on Halfdome timelapse Yosemite CA 2023-07-15 20-11-06 1.webm",
-      "Yosemite Upper Falls high flow Yosemite CA 2023-07-13 14-42-17 1.webm", "Bridalveil Falls from Valley View Yosemite CA 2023-07-13 18-05-30 1.webm"] },
-    { id: "glaciers", name: "Glaciers & mountains", group: "National parks & wonders", files: ["Lamplugh Glacier timelapse.webm", "Time-lapse of Mount Rainier, Washington, USA.webm",
-      "Reid Glacier in Alaska.webm"] },
-    { id: "nyc", name: "New York from above", group: "Cities", files: ["Aerial views of Midtown Manhattan, New York City, USA.webm",
-      "Aerial views of Central Park Tower, 220 Central Park South (Billionaires Row) and Upper West Side Manhattan, New York City, USA.webm",
-      "Aerial views of Hells Kitchen and East Midtown Manhattan in New York City, USA at night.webm"] },
-    { id: "vegas", name: "Las Vegas at night", group: "Cities", files: [
-      "Aerial views of Las Vegas, Nevada, USA at sunset including The Bellagio Fountain Hotel and Casino, Flamingo, High Roller Observation Wheel and Treasure Island.webm",
-      "Aerial views of Las Vegas Strip, Nevada, USA at twilight including The Bellagio Casino Hotel and Resort fountain and light show.webm",
-      "Aerial views of Las Vegas Strip, Nevada, USA at night including The Bellagio, The Flamingo, MGM Grand Hotel, Caesars Palace, The Cosmopolitan, Mirage Hotel and Casino and the Venetian Palazzo Resort Casino.webm"] },
-    { id: "skylines", name: "City skylines", group: "Cities", files: ["Chicago Day and Night.webm", "Chicago Skyline from Museum Campus.webm",
-      "Shanghai Bund, Lujiazui Skyline Timelapse.webm", "San Francisco vue aerienne.ogv", "Eiffel Tower Drone 4k-Qx c1X3zfEc-313-251.webm"] },
-    { id: "alps", name: "Swiss Alps", group: "Around the world", files: ["Aerial views of the Swiss Alps.webm", "Timelapse of Swiss mountains.webm",
-      "Aerial views of Fronalpstock, Schwyzer Alps, Switzerland.webm", "Italy and Switzerland by Drone.webm"] },
-    { id: "iceland", name: "Iceland waterfalls", group: "Around the world", files: ["Goðafoss waterfall in Northern Iceland.webm", "Dettifoss waterfall in Northern Iceland.webm",
-      "Glanni waterfalls in northern Iceland.webm", "Gullfoss waterfall in Iceland.webm", "Sveinsstekksfoss waterfall in Eastern Iceland.webm", "Waterfall in Kolugljúfur canyon in Northern Iceland.webm"] },
-    { id: "world", name: "World wonders", group: "Around the world", files: ["2018-09-25 Santa Maria della Salute (Venice) Grand Canal.webm", "Machu-Pichu (video 2011).webm",
-      "Aerial imagery of fjords and rivers in Arctic Norway.webm", "Canal Grande MVI 0675.webm", "Time-lapse of Patagonia, Argentina.webm", "Montoj apud Maĉupikĉuo.webm"] }
-  );
-  VID_TOPICS.forEach(function (t) {                    // a few more checked clips in existing sets
-    var more = { hawaii: ["North Shore Hawaii filmed with a drone.webm", "‘Āina (Hawaii).webm"], underwater: ["Blue Holes auf den Bahamas (CC BY 4.0).webm"],
-                 honor: ["Washington Monument base sunrise 2023-05-07 06-09-51 1.webm"], halloween: ["Autumnleavesfalling-kanagawa-2022Dec5.webm"] }[t.id];
-    if (more && t.files) t.files = t.files.concat(more);
-    if (t.id === "city") t.group = "Cities";
-    if (t.id === "halloween") t.name = "Halloween (stormy autumn nights)";
-  });
-  VID_TOPICS.push(                                       // NASA's own videos (public domain), found by search
-    // NASA's own search mixes in narrated news, so these are hand-picked (long, quiet footage loops least)
-    { id: "nasa-iss", name: "Earth from the space station", group: "Space (NASA)", src: "nasa", q: "earth views",
-      ids: ["NHQ_2020_1221_Earth Views", "Earth Views from the International Space Station", "jsc2021m000138_4K_Earth_Views_Extended_Cut_for_Earth_Day_ 2021_210422-4KMP4"] },
-    { id: "nasa-sun", name: "The Sun up close", group: "Space (NASA)", src: "nasa", q: "solar dynamics observatory",
-      ids: ["GSFC_20170211_SDO_m12500_Year7", "GSFC_20160212_SDO_m12144_Year6", "GSFC_20160624_SDO_m12292_TwistingSolarMaterial"] });
-  var VID_GROUPS = ["Beach & ocean", "Underwater", "National parks & wonders", "Around the world", "Nature", "Cities", "Cozy", "Space (NASA)", "Holidays & seasons"];   // the order in Settings
+  var VID_GROUPS = ["Beaches & tropical", "Underwater & sea life", "Wildlife & animals", "Nature", "Weather", "Sky & space", "Cities", "Aerial world tour", "National parks & wonders", "Scenic drives & trains", "Sports", "Cozy", "Abstract & art", "Holidays & seasons"];   // the order in Settings
   var VID_PER = 8, vidJobs = {}, vidSeq = 0, pendingVid = {};
   function vidList(id) { var s = load("vidset:" + id); return s && s.videos && s.videos.length ? s.videos : null; }
-  function myVidCats() { return load("vidcats") || []; }  // live video searches you saved: [{id, name, q, src: "mix"}]
+  function myVidCats() { return load("vidcats") || []; }  // live video searches you saved: [{id, name, q, src: "mix"}], YouTube sets: [{id, name, src: "yt", vids}]
   function vidCats() { return VID_TOPICS.concat(myVidCats(), vidList("shared") ? [{ id: "shared", name: "Videos from phones", local: true }] : []); }
+  // Settings shows the sets by group: the built-in groups, then "Your videos" (searches, YouTube, videos from phones).
+  function vidGroupOf(c) { return !c ? "" : VID_GROUPS.indexOf(c.group) >= 0 ? c.group : "Your videos"; }
+  function vidGroups() { return VID_GROUPS.concat(vidCats().some(function (c) { return vidGroupOf(c) === "Your videos"; }) ? ["Your videos"] : []); }
   function vidCatOf(id) { return vidCats().filter(function (c) { return c.id === id; })[0]; }
   function commonsVideos(cat) {                         // a preset's own files by name, or a search for the rest
     return fetch("https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*" +
@@ -443,44 +776,128 @@
         return (full.length >= 3 ? full : hd.length >= 3 ? hd : all).slice(0, VID_PER);
       });
   }
-  window.guestVidSaved = function (id, ok, url) { var p = pendingVid[id]; delete pendingVid[id]; if (p) (ok ? p[0] : p[1])(url); };
+  // snd: a YouTube clip that was saved with its sound track (the TV keeps it only when asked, and when it can).
+  var vidSnd = {};
+  window.guestVidSaved = function (id, ok, url, snd) { var p = pendingVid[id]; delete pendingVid[id]; if (ok && snd) vidSnd[url] = true; if (p) (ok ? p[0] : p[1])(url); };
+  // ---- YouTube (the app's YouTube.java, NewPipe Extractor) ----------------------------------------------------
+  // Search finds up to 20 videos ([{id, t, a, d, th}]); a link or a video id finds that one. Saving keeps part of it on
+  // the TV: at most 30 minutes in 1080p, or 10 minutes in 4K when Settings › Live video › Video quality says 4K and the
+  // TV is sending 4K, from a chosen start point, with the sound only when asked. Stream addresses expire, so nothing
+  // is streamed.
+  var YT_PER = 5;                                         // clips in a set made from a search (they take room on the TV)
+  var ytAvail = function () { return !!(app && app.youtubeSearch && app.youtubeSave); };
+  function ytSearch(q) {
+    if (!ytAvail()) return Promise.reject(new Error("YouTube backgrounds work on the TV"));
+    return new Promise(function (res, rej) { var id = "f" + (++fetchSeq); pendingFetch[id] = [res, rej]; app.youtubeSearch(id, q); })
+      .then(function (t) { var l = JSON.parse(t); return Array.isArray(l) ? l : []; });
+  }
+  // cc: the video must still be Creative Commons (the built-in sets); sec: the clip's length (0: the longest, 30 / 10
+  // minutes); st: seconds to skip at the start (an intro, a title card), up to 10 minutes; snd: keep the sound too.
+  var YT_MAX_START = 600;
+  function ytSave(yt, dir, name, cc, sec, st, snd) {
+    if (!ytAvail()) return Promise.reject("YouTube backgrounds work on the TV");
+    st = Math.max(0, Math.min(YT_MAX_START, Math.round(st || 0)));
+    var q = (PREFS.vidQuality === "4k" ? "4k" : "1080") + (cc ? ",cc" : "") + (sec ? "," + Math.max(20, Math.min(1800, Math.round(sec))) : "") + (st ? ",s" + st : "") + (snd ? ",snd" : "");
+    return new Promise(function (res, rej) { var id = "v" + (++vidSeq); pendingVid[id] = [res, rej]; app.youtubeSave(id, yt, q, dir, name); });
+  }
+  // The built-in sets' YouTube clips: up to 2½ minutes each (they loop, and the set moves on every minute or so), about
+  // 30-80 MB in 1080p. Only the eight built-in sets played last keep theirs; an older one fetches them again if chosen.
+  var YT_PRESET_SEC = 150, YT_PRESET_KEEP = 8;
+  // A set made from the top results of a search: 5 minutes of each (one video added on its own picks its length).
+  var YT_SET_SEC = 300;
+  function ytPrune(keep) {
+    var sets = VID_TOPICS.filter(function (t) { var l = t.yt && vidList(t.id); return l && l.some(function (v) { return v.yt; }); })
+      .map(function (t) { return { id: t.id, p: (load("vidset:" + t.id) || {}).p || 0 }; })
+      .sort(function (a, b) { return b.p - a.p; });
+    var now = liveTopic();
+    sets.filter(function (x) { return x.id !== keep && x.id !== now; }).slice(YT_PRESET_KEEP - 1).forEach(function (x) { deleteVid(x.id); });
+  }
+  // "Near you": Creative Commons YouTube videos of the TV's town (Settings › Location), found by search, so they
+  // aren't checked by hand. Fetched again when the location changes.
+  function nearPlace() { return LOC && LOC.name ? LOC.name.replace(/\s*\(.*\)$/, "") : ""; }
+  function nearVideos() {
+    var place = nearPlace();
+    if (!place) return Promise.reject(new Error("no location"));
+    var junk = /#shorts|vlog|review|tutorial|unbox|crash|news|accident|fail|music video|walking tour|walk\b|driving tour|prank|interview|trailer|lyrics|reaction|real estate|for sale|tour of (my|our)|home tour/i;
+    var get = function (q) { return ytSearch("cc:" + q).catch(function () { return []; }); };
+    return get(place + " drone 4k").then(function (l) { return l.length >= 6 ? l : get(place + " drone").then(function (m) { return l.concat(m); }); }).then(function (l) {
+      var seen = {};
+      return l.filter(function (v) { if (seen[v.id] || junk.test(v.t || "") || v.d < 20 || v.d > 3600) return false; seen[v.id] = 1; return true; })
+        .slice(0, 4).map(function (v) { return { yt: v.id, url: "", f: v.t || v.id, u4: "", mb4: 0, a: (v.a || "YouTube").slice(0, 60), l: "CC BY", s: "yt", cc: true }; });
+    });
+  }
+  // "Today's weather": the set for what the forecast says now (rain, snow, storms, fog, clouds; clear skies: the
+  // stars at night, otherwise the season's sunny set).
+  function weatherTopic() {
+    var w = load("weather") || {}, t = (w.text || "").toLowerCase(), mo = new Date().getMonth();
+    if (/thunder|t-storm|storm/.test(t)) return "storm";
+    if (/snow|flurr|sleet|blizzard|ice/.test(t)) return "snowfall";
+    if (/rain|shower|drizzle/.test(t)) return "rain";
+    if (/fog|haze|smoke|mist/.test(t)) return "fog";
+    if (/cloud|overcast/.test(t) && !/partly|mostly sunny|mostly clear/.test(t)) return "clouds";
+    if (w.day === false) return "stars";
+    return mo <= 1 || mo === 11 ? "snowpeaks" : mo <= 4 ? "flowers" : mo <= 8 ? "tropical" : "autumn";
+  }
+  function vidPlayed(id) { var s = load("vidset:" + id); if (s && Date.now() - (s.p || 0) > 3600000) { s.p = Date.now(); save("vidset:" + id, s); } }
+  function ytTime(s) { s = Math.max(0, Math.round(s || 0)); var h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60; return (h ? h + ":" + (m < 10 ? "0" : "") : "") + m + ":" + (x < 10 ? "0" : "") + x; }
   function saveVideo(url, dir, name) {
     if (!app || !app.saveVideo) return Promise.resolve(url);       // computer preview: straight from Commons
     return new Promise(function (res, rej) { var id = "v" + (++vidSeq); pendingVid[id] = [res, rej]; app.saveVideo(id, url, dir, name); });
   }
-  function downloadVid(cat) {
-    if (cat.auto) cat = vidCatOf(seasonalTopic());       // "Holidays & seasons" fetches today's set
-    if (!cat || vidJobs[cat.id] || (!cat.files && !cat.q)) return;
+  function downloadVid(cat, light) {           // light: only the streamed clips for now (setup's quick look)
+    if (cat && cat.auto) cat = vidCatOf(autoTopic(cat));   // "Holidays & seasons" and "Today's weather" fetch today's set
+    if (!cat || vidJobs[cat.id] || (!cat.files && !cat.q && !cat.yt && cat.src !== "near" && cat.src !== "yt")) return;
     vidJobs[cat.id] = { done: 0, total: 0 };
-    var found = cat.src === "nasa" ? nasaVideos(cat) : cat.src !== "mix" ? commonsVideos(cat)
+    // YouTube sets: the videos picked are in the set itself; ones already saved are kept, not fetched again.
+    var had = {}, why = "";
+    if (cat.src === "yt") (vidList(cat.id) || []).forEach(function (v) { if (v.yt) had[v.yt] = v; });
+    // Built-in sets: their hand-picked Creative Commons YouTube clips first (saved on the TV), then the Commons or NASA
+    // clips (streamed), which also carry the set when YouTube can't be reached. "Near you" searches YouTube for CC
+    // videos of the TV's town.
+    var ytPre = ytAvail() && cat.yt && !light ? cat.yt.map(function (y) { return { yt: y[0], url: "", f: y[2] || y[0], u4: "", mb4: 0, a: y[1], l: "CC BY", s: "yt", cc: true }; }) : [];
+    var backup = function (p) { return ytPre.length ? p.catch(function () { return []; }).then(function (l) { return l.slice(0, 1).concat(ytPre, l.slice(1)).slice(0, VID_PER); }) : p; };   // a streamed one first: it plays at once
+    var found = cat.src === "yt" ? Promise.resolve((cat.vids || []).map(function (v) { return { yt: v.id, url: "", f: v.t || v.id, u4: "", mb4: 0, a: (v.a || "YouTube").slice(0, 60), l: v.cc ? "CC BY" : "", s: "yt", cc: !!v.cc, st: v.st || 0, len: v.len || YT_SET_SEC, snd: !!v.snd }; }))
+      : cat.src === "near" ? nearVideos()
+      : !cat.files && !cat.q && !cat.ids ? Promise.resolve(ytPre)
+      : cat.src === "nasa" ? backup(nasaVideos(cat)) : cat.src !== "mix" ? backup(commonsVideos(cat))
       : Promise.all([commonsVideos(cat).catch(function () { return []; }), nasaVideos(cat).catch(function () { return []; })]).then(function (l) {
           var out = [];                                          // your searches: Commons and NASA, taking turns
           for (var i = 0; out.length < VID_PER && (l[0][i] || l[1][i]); i++) { if (l[0][i]) out.push(l[0][i]); if (l[1][i] && out.length < VID_PER) out.push(l[1][i]); }
           return out;
         });
     found.then(function (list) {
-      if (!list.length) { delete vidJobs[cat.id]; toast("No videos found for “" + cat.name + "”"); if (custOpen) renderCustom(); return; }
-      var set = { t: Date.now(), videos: [], kept: PREFS.vidKeep === "keep" };
+      if (!list.length) { delete vidJobs[cat.id]; toast(cat.yt && !ytAvail() ? cat.name + " plays on the TV (its clips come from YouTube)" : "No videos found for “" + cat.name + "”"); if (custOpen) renderCustom(); return; }
+      var set = { t: Date.now(), p: Date.now(), place: cat.src === "near" ? nearPlace() : undefined, light: light && ytAvail() && cat.yt ? true : undefined, videos: [], kept: cat.src === "yt" || cat.src === "near" || PREFS.vidKeep === "keep" };
+      if (cat.yt) ytPrune(cat.id);                                   // room for these: the oldest built-in sets' clips go
       vidJobs[cat.id].total = list.length;
       list.reduce(function (chain, v, i) {                           // one after another: they're big
         return chain.then(function () {
           // Streamed by default: only the links are kept (no storage); "Keep videos on the TV" downloads them.
-          return (set.kept ? saveVideo(v.url, "v-" + cat.id, "v" + i) : Promise.resolve(v.url)).then(function (u) {
-            set.videos.push({ u: u, f: v.f, u4: v.u4, mb4: v.mb4, a: v.a, l: v.l, s: v.s || "" });   // 4K is always streamed, never kept; f: the Commons file name
+          var get = v.yt ? (had[v.yt] ? Promise.resolve(had[v.yt].u) : ytSave(v.yt, "v-" + cat.id, "y" + Date.now().toString(36) + i, v.cc, cat.src === "yt" ? v.len : YT_PRESET_SEC, v.st, v.snd))
+                    : set.kept ? saveVideo(v.url, "v-" + cat.id, "v" + i) : Promise.resolve(v.url);
+          return get.then(function (u) {
+            var snd = v.yt && (vidSnd[u] || (had[v.yt] && had[v.yt].snd));
+            set.videos.push({ u: u, f: v.f, u4: v.u4, mb4: v.mb4, a: v.a, l: v.l, s: v.s || "", yt: v.yt || undefined, cc: v.cc || undefined, snd: snd || undefined });   // 4K from Commons is always streamed, never kept; f: the file or video name
             save("vidset:" + cat.id, set);
             if (set.videos.length === 1 && PREFS.bg.indexOf("vid:") === 0 && liveTopic() === cat.id) liveSync();   // the first one plays at once
             if (set.videos.length === 1 && previewing && custOpen) {                 // or in the preview, if it's still highlighted
               var hr = custRows()[custRow]; if (hr && hr.vcat && liveTopic(hr.bg) === cat.id) previewBg(hr);
             }
-          }, function () {}).then(function () { vidJobs[cat.id].done++; if (custOpen) renderCustom(); });
+          }, function (e) { if (typeof e === "string" && e) why = e; }).then(function () { vidJobs[cat.id].done++; if (custOpen) renderCustom(); });
         });
       }, Promise.resolve()).then(function () {
         delete vidJobs[cat.id];
-        if (!SU.open) toast(set.videos.length ? cat.name + ": " + set.videos.length + " videos ready" : "Couldn't download " + cat.name + " videos");   // setup stays quiet
+        if (!SU.open) toast(set.videos.length ? cat.name + ": " + set.videos.length + " videos ready" + (why && set.videos.length < list.length ? " (" + why + " for some)" : "")
+                                              : "Couldn't download " + cat.name + " videos" + (why ? ": " + why : ""));   // setup stays quiet
         if (custOpen) renderCustom();
       });
       if (custOpen) renderCustom();
-    }).catch(function () { delete vidJobs[cat.id]; toast("Couldn't reach " + (cat.src === "nasa" ? "NASA" : "Wikimedia Commons")); if (custOpen) renderCustom(); });
+    }).catch(function () {
+      delete vidJobs[cat.id];
+      toast(cat.src === "near" && !nearPlace() ? "Set the TV's location first (Settings › Location)" : cat.src === "near" && !ytAvail() ? "Near you works on the TV"
+            : "Couldn't reach " + (cat.src === "nasa" ? "NASA" : cat.src === "yt" || cat.src === "near" ? "YouTube" : "Wikimedia Commons"));
+      if (custOpen) renderCustom();
+    });
   }
   function deleteVid(id) {
     if (app && app.deleteBg) app.deleteBg("v-" + id);
@@ -516,8 +933,9 @@
     var mo = now.getMonth();
     return mo <= 1 || mo === 11 ? "snowfall" : mo <= 4 ? "spring" : mo <= 7 ? "waves" : "autumn";
   }
-  function liveTopic(bg) { var id = (bg || PREFS.bg).slice(4); return id === "seasonal" ? seasonalTopic() : id; }
-  setInterval(function () { if (PREFS.bg === "vid:seasonal") liveSync(); }, 3600000);   // the holiday turns over by itself
+  function autoTopic(c) { return c.auto === "wx" ? weatherTopic() : seasonalTopic(); }
+  function liveTopic(bg) { var id = (bg || PREFS.bg).slice(4); return id === "seasonal" ? seasonalTopic() : id === "weather" ? weatherTopic() : id; }
+  setInterval(function () { if (PREFS.bg === "vid:seasonal" || PREFS.bg === "vid:weather") liveSync(); }, 3600000);   // the holiday or the weather turns over by itself
   // One clip instead of the whole set (Settings › Backgrounds › Live video › a set › a clip): PREFS.vidClip is
   // "<set>|<file name>" ("#<n>" for sets fetched before file names were kept). "" plays the whole set, a new clip every
   // minute or so (the photo speed, at least a minute). A chosen clip loops with no transition.
@@ -552,6 +970,10 @@
     document.body.classList.remove("live-bg");
   }
   function liveSync() {                                   // PREFS.bg decides: a video set that has videos, or photos
+    var ns = liveTopic() === "near" && load("vidset:near");
+    if (ns && ns.place !== nearPlace() && nearPlace() && !vidJobs.near) deleteVid("near");   // moved: the new town's videos
+    var ls = PREFS.bg.indexOf("vid:") === 0 && !SU.open && load("vidset:" + liveTopic());
+    if (ls && ls.light && !vidJobs[liveTopic()] && vidCatOf(liveTopic())) downloadVid(vidCatOf(liveTopic()));   // setup's quick look: now the whole set
     if (PREFS.bg.indexOf("vid:") === 0 && !vidList(liveTopic())) {                   // no list yet (first time, a restored backup)
       var vc = vidCatOf(liveTopic());
       if (vc && !vc.local && !vidJobs[vc.id]) downloadVid(vc);
@@ -563,6 +985,8 @@
     else if (liveResume) { liveResume = false; livePlay(); }          // the 4K player was let go while an app was open
     else if (!nativeOn && vidEl.paused && liveCanPlay()) vidEl.play().catch(function () {});
   }
+  // A set goes back to photos only once every clip in it has failed in a row (at least 3 tries).
+  function liveGiveUp() { var l = liveSet && vidList(liveSet.slice(4)); return Math.max(3, l ? l.length : 0); }
   function livePlay() {
     var list = vidList(liveSet.slice(4));
     if (!list) { liveSync(); return; }
@@ -570,7 +994,7 @@
     vidEl.classList.remove("on");
     setTimeout(function () {                              // after the fade out, so the cut never shows
       if (!liveSet) return;
-      liveStart = Date.now(); liveClip = v;
+      liveStart = Date.now(); liveClip = v; vidPlayed(liveSet.slice(4));
       var four = want4k(v) && liveCanPlay();
       document.getElementById("credit").textContent = v.shared ? "Video shared from " + v.a : "Video: " + v.a + (v.l ? " · " + v.l : "") + " · " + srcName(v) + (four ? " · 4K" : "");
       // On the TV every clip plays in its own player, behind the page: Fire TV's web view won't play these WebM clips
@@ -579,6 +1003,7 @@
         nativeOn = true; vidEl.pause(); vidEl.removeAttribute("src");
         liveClip.play = four ? v.u4 : v.u;
         app.nativeVideo(liveClip.play);
+        liveVolSync();
         return;
       }
       if (four) { vidEl.src = v.u4; } else { nativeOff(); vidEl.src = v.u; }   // the preview has no app: 4K in the page
@@ -603,13 +1028,30 @@
   // 4K: Android's player behind the page (Home.nativeVideoPlay). The page goes see-through while it plays; an error,
   // or no room for it (the Home-button overlay), plays that clip's 1080p copy in the page instead.
   var nativeOn = false, liveClip = null, liveResume = false, nativeRes = "", no4k = {};
+  // A clip saved with its sound plays it quietly (Settings › Live video › Sound: on or off), and goes silent while music plays
+  // in another app, Offshore's Radio or a sleep sound is on, or the home screen isn't in front (the app sees to that).
+  // Only the TV's own player has sound; the page's video stays muted.
+  var VID_VOL = 0.25;
+  function liveVol() {
+    if (!nativeOn || !liveClip || !liveClip.snd || PREFS.vidSound === "off") return 0;
+    if (MUSIC.title && MUSIC.playing) return 0;
+    if (typeof RD !== "undefined" && RD.now) return 0;
+    if (typeof SLEEP !== "undefined" && SLEEP.on) return 0;
+    return VID_VOL;
+  }
+  var liveVolNow = -1;
+  function liveVolSync() {
+    if (!app || !app.nativeVideoVolume) return;
+    var v = liveVol();
+    if (v !== liveVolNow) { liveVolNow = v; app.nativeVideoVolume(v); }
+  }
   function nativeOff() {
     if (nativeOn && app && app.nativeVideo) app.nativeVideo("");
     nativeOn = false; document.body.classList.remove("native-vid"); document.documentElement.classList.remove("native-vid");
   }
   window.guestNativeVid = function (ev, w, h) {
     if (!nativeOn) return;
-    if (ev === "playing") { liveFails = 0; nativeRes = w + "×" + h; document.body.classList.add("native-vid"); document.documentElement.classList.add("native-vid"); }
+    if (ev === "playing") { liveFails = 0; nativeRes = w + "×" + h; liveVolSync(); document.body.classList.add("native-vid"); document.documentElement.classList.add("native-vid"); }
     else if (ev === "ended") liveNext();
     else {                                                // error / unavailable
       console.info("live background: TV player " + ev + " " + w + "/" + h + " for " + (liveClip && liveClip.play));
@@ -617,19 +1059,19 @@
         no4k[liveClip.u4] = true; liveClip.play = liveClip.u; app.nativeVideo(liveClip.u); return;
       }
       nativeOff();
-      if (++liveFails >= 3) { liveStop(); shownSet = ""; nextPhoto(); return; }   // nothing plays: photos again
+      if (++liveFails >= liveGiveUp()) { liveStop(); shownSet = ""; nextPhoto(); return; }   // nothing plays: photos again
       liveIdx++; livePlay();
     }
   };
-  // Settings › Backgrounds › Video quality: "auto" (4K when the TV sends 4K and the last speed test shows room for
-  // the clip, with margin), "4k" (whenever a clip has a 4K original), "1080" (never).
-  var LIVE_4K = false;     // off for now: the TV's video plane showed clips upside down, so video is drawn at 1080p
+  // Settings › Backgrounds › Live video › Video quality: "1080" (the default) or "4k". 4K applies to YouTube clips
+  // saved from then on (when the TV sends 4K), and to Commons clips that have a 4K original, streamed when the TV sends
+  // 4K and the last speed test shows room for the clip, with margin.
+  var LIVE_4K = false;     // Commons 4K streaming: off for now (the TV's video plane showed clips upside down)
   function want4k(v) {
     if (!LIVE_4K && app) return false;
-    var q = PREFS.vidQuality || "auto";
-    if (!v || !v.u4 || no4k[v.u4] || q === "1080") return false;
-    if (q === "4k") return true;
-    if (!app || !app.tvIs4k || !app.tvIs4k()) return false;
+    if (!v || !v.u4 || no4k[v.u4] || PREFS.vidQuality !== "4k") return false;
+    if (!app) return true;
+    if (!app.tvIs4k || !app.tvIs4k()) return false;
     var s = load("speedtest");
     if (!s || Date.now() - s.t > 7 * 86400000) { quickSpeed(); return false; }   // measure once; 1080p meanwhile
     return s.down >= v.mb4 * 1.6;
@@ -782,7 +1224,7 @@
   vidEl.addEventListener("error", function () {
     if (!liveSet || !vidEl.getAttribute("src")) return;
     console.info("live background: page player error " + (vidEl.error ? vidEl.error.code + " " + (vidEl.error.message || "") : "?"));
-    if (++liveFails >= 3) { console.info("live background: clips won't play, back to photos"); liveStop(); shownSet = ""; nextPhoto(); return; }
+    if (++liveFails >= liveGiveUp()) { console.info("live background: clips won't play, back to photos"); liveStop(); shownSet = ""; nextPhoto(); return; }
     liveIdx++; livePlay();
   });
   document.addEventListener("visibilitychange", function () { if (document.hidden) vidEl.pause(); else if (liveSet && liveCanPlay()) vidEl.play().catch(function () {}); });

@@ -247,8 +247,11 @@
   .su-item.on i { background: #30d158; border-color: #30d158; }
   .su-item b { display: block; font-size: 28px; font-weight: 600; }
   .su-item small { display: block; font-size: 20px; color: rgba(255,255,255,.5); margin-top: 3px; }
-  .su-how { width: 1136px; margin-top: 30px; text-align: left; font-size: 23px; line-height: 1.5; color: rgba(255,255,255,.6); display: flex; flex-direction: column; gap: 12px; }
+  .su-how { width: 1136px; margin-top: 18px; text-align: left; font-size: 23px; line-height: 1.5; color: rgba(255,255,255,.6); display: flex; flex-direction: column; gap: 12px; }
   .su-how > div { display: flex; gap: 16px; align-items: baseline; }
+  .su-how code { display: inline-block; margin: 6px 0; padding: 4px 12px; border-radius: 8px; background: rgba(255,255,255,.1); color: #fff; font: 21px/1.4 ui-monospace, "DejaVu Sans Mono", monospace; }
+  .su-how small { font-size: 19px; }
+  .su-how small code { font-size: 18px; margin: 2px 0; }
   .su-how em { flex: none; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.12); color: #fff; font-style: normal; font-size: 19px; font-weight: 600;
     display: inline-flex; align-items: center; justify-content: center; }
   .su-how b { color: #fff; font-weight: 600; }

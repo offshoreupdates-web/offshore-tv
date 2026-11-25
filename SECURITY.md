@@ -14,7 +14,8 @@ Only the latest release gets security fixes.
 - The app updates only from its release feed over HTTPS. A download installs only if its SHA-256 matches the feed,
   it's signed with the same key as the installed app, and its version is newer. Android checks the signature again,
   and a person has to press Install on the TV.
-- Builds use libraries from Maven Central, each checked against its published hash (`tools/setup_toolchain.ps1`).
+- Builds use libraries from Maven Central and Google's Maven repository, each checked against its published hash, and
+  NewPipe Extractor from JitPack, checked against a SHA-256 pinned in `tools/setup_toolchain.ps1`.
 
 ## The interface
 
@@ -32,6 +33,12 @@ Only the latest release gets security fixes.
 - Web requests go over HTTPS to the services listed in the code and in [CREDITS.md](CREDITS.md), plus the calendars,
   playlists and network folders the user adds. Background photos and videos come only from `upload.wikimedia.org`,
   `images-assets.nasa.gov`, `images.metmuseum.org`, `www.artic.edu` and `tile.loc.gov`.
+- YouTube backgrounds go through NewPipe Extractor inside the app. Its requests are limited to HTTPS on
+  `youtube.com` and its subdomains, `youtubei.googleapis.com` and `*.googlevideo.com`; redirects anywhere else are
+  refused. The built-in sets and "Near you" only save videos that are still marked Creative Commons when saved, and
+  only the eight sets played last keep their clips. It runs YouTube's player code in Rhino (a JavaScript interpreter with no access to the app, the page or
+  files) to unlock the video stream. The download is size-capped and checked for free space first, then copied into
+  a clean video file by Android's own media tools before the TV's player opens it.
 - Downloads are size-capped, run on a small fixed pool, and are refused if they redirect off the allowed host.
 - Cleartext is allowed only to `127.0.0.1`. Radio stations that only stream over HTTP are fetched by `RadioRelay` and
   passed on at `http://127.0.0.1:<port>/<random token>`: one station at a time, at most 5 redirects, and never to an

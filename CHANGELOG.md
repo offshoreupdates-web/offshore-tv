@@ -2,7 +2,7 @@
 
 What changed in each version, newest first. The same notes appear in the app under Settings › Updates & about › What's new.
 
-## 0.19 (unreleased) · November 2026
+## 0.19 · November 2026
 
 - Backgrounds from NASA, The Met, the Art Institute of Chicago and the Library of Congress, alongside Wikimedia Commons
 - Search for photos across all five sources, and search for live videos on Wikimedia Commons and NASA
@@ -10,7 +10,14 @@ What changed in each version, newest first. The same notes appear in the app und
 - Sound output shows what your TV or sound system really gets: stereo, or the surround format when surround is on
 - Keep watching now includes YouTube and Amazon's other video apps
 - The app name sits in the right place when there's no Keep watching row, and weather alerts sit under the clock
-- Offshore is open source under the GNU GPL, with every library and source credited in About
+- Offshore is open source under the GNU GPL, with every library and source credited in About. The code, ideas and fixes: github.com/offshoreupdates-web/offshore-tv
+- Live video, rebuilt: 66 sets in 14 groups, with hand-picked Creative Commons videos from YouTube, credited to each channel
+- Today's weather plays the sky outside, and Near you shows videos of your own town
+- Any YouTube video as a background: search or paste a link, pick where it starts and how long it runs (up to 30 minutes, 10 in 4K), and whether its sound comes too
+- Background sound: a quiet fire, rain or waves from videos saved with sound, silent while music plays. Settings › Backgrounds › Live video › Sound turns it on or off
+- Video quality is one setting: 1080p, or 4K when the TV is set to 4K
+- Setup shows which extras are still off and the exact command to switch them on from a computer
+- Updates now come from the offshore-tv project on GitHub
 
 ## 0.18 · November 2026
 

@@ -8,7 +8,11 @@
 #   android-sdk\    Google's command-line tools (checked against Google's repository index), then build-tools 34,
 #                   the Android 9 platform and platform-tools through sdkmanager (you accept Google's licences)
 #   platform-tools\ a copy of adb for the other scripts
-#   libs\           the eight libraries in tools\libs\README.txt, from Maven Central, checked against its SHA-1
+#   libs\           the libraries in tools\libs\README.txt: from Maven Central, checked against its SHA-1, and NewPipe
+#                   Extractor and nanojson from JitPack (built from the projects' own release tags), checked against
+#                   the SHA-256 written below
+#   desugar\        R8 and Java library desugaring from Google's Maven repository, checked against its SHA-1 (lets
+#                   NewPipe Extractor's newer Java run on Fire OS)
 # Safe to run again: anything already there is skipped.
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"   # the progress bar slows downloads a lot and can stall a terminal that isn't shown
@@ -75,19 +79,44 @@ if (-not (Test-Path (Join-Path $tools "platform-tools"))) {
 }
 
 # 4. Libraries
-Write-Host "[4/4] Libraries from Maven Central"
+Write-Host "[4/4] Libraries (Maven Central, JitPack) and desugaring (Google Maven)"
 $libs = Join-Path $tools "libs"; New-Item -ItemType Directory -Force $libs | Out-Null
 $jars = @("com/hierynomus/smbj/0.14.0/smbj-0.14.0.jar", "com/hierynomus/asn-one/0.6.0/asn-one-0.6.0.jar",
           "net/engio/mbassador/1.3.2/mbassador-1.3.2.jar", "org/bouncycastle/bcprov-jdk18on/1.80/bcprov-jdk18on-1.80.jar",
           "com/emc/ecs/nfs-client/1.1.0/nfs-client-1.1.0.jar", "io/netty/netty/3.10.6.Final/netty-3.10.6.Final.jar",
-          "org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar")
-foreach ($j in $jars) {
+          "org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar", "org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar",
+          # YouTube backgrounds: what NewPipe Extractor uses
+          "org/mozilla/rhino/1.8.1/rhino-1.8.1.jar", "org/jsoup/jsoup/1.24.1/jsoup-1.24.1.jar",
+          "com/google/protobuf/protobuf-javalite/4.36.2/protobuf-javalite-4.36.2.jar", "com/google/code/findbugs/jsr305/3.0.2/jsr305-3.0.2.jar")
+function MavenJar([string]$repo, [string]$j, [string]$dir) {
+    $file = Join-Path $dir (Split-Path $j -Leaf)
+    if (Test-Path $file) { return }
+    $base = "$repo/$j"
+    Fetch $base $file
+    $c = (Invoke-WebRequest -UseBasicParsing "$base.sha1").Content
+    if ($c -is [byte[]]) { $c = [Text.Encoding]::ASCII.GetString($c) }           # Google's server sends it as binary
+    Check $file SHA1 ([string]$c).Trim().Split(' ')[0]
+}
+foreach ($j in $jars) { MavenJar "https://repo1.maven.org/maven2" $j $libs }
+# NewPipe Extractor is published on JitPack, which builds it from the release tag on github.com/TeamNewPipe (v0.27.1 =
+# commit 6ce85c1). JitPack gives no hash for the jar, so its SHA-256 is written here; a different file stops the setup.
+$pinned = @{
+    "com/github/TeamNewPipe/NewPipeExtractor/v0.27.1/NewPipeExtractor-v0.27.1.jar" = "154fd5efc333d8fdc9cc60abac12d42cd6bf49c8df2f93c5a850fd60c8d7534a"
+    "com/github/TeamNewPipe/nanojson/e9d656ddb49a412a5a0a5d5ef20ca7ef09549996/nanojson-e9d656ddb49a412a5a0a5d5ef20ca7ef09549996.jar" = "d495881a322b3c72e5d43284afd7d7021520028ca8b7c6ba861e3fd8d90614d5"
+}
+foreach ($j in $pinned.Keys) {
     $file = Join-Path $libs (Split-Path $j -Leaf)
     if (Test-Path $file) { continue }
-    $base = "https://repo1.maven.org/maven2/$j"
-    Fetch $base $file
-    $want = ((Invoke-WebRequest -UseBasicParsing "$base.sha1").Content -as [string]).Trim().Split(' ')[0]
-    Check $file SHA1 $want
+    Fetch "https://jitpack.io/$j" $file
+    Check $file SHA256 $pinned[$j]
+}
+# R8 and the desugared Java library (Google's Maven repository): NewPipe Extractor is written for Java 17, and Fire OS's
+# Android 9 and 11 lack some of that; these add the missing parts at build time, the way Android Studio does.
+Write-Host "      R8 and Java library desugaring from Google's Maven repository"
+$desugar = Join-Path $tools "desugar"; New-Item -ItemType Directory -Force $desugar | Out-Null
+foreach ($j in @("com/android/tools/r8/9.5.33/r8-9.5.33.jar", "com/android/tools/desugar_jdk_libs_nio/2.1.5/desugar_jdk_libs_nio-2.1.5.jar",
+                 "com/android/tools/desugar_jdk_libs_configuration_nio/2.1.5/desugar_jdk_libs_configuration_nio-2.1.5.jar")) {
+    MavenJar "https://dl.google.com/dl/android/maven2" $j $desugar
 }
 if ($onWin) { Write-Host "`nDone. Build with:  powershell -ExecutionPolicy Bypass -File "".\launcher\android\build.ps1"" -VersionCode 1 -VersionName 0.1" }
 else { Write-Host "`nDone. Build with:  pwsh -File ./launcher/android/build.ps1 -VersionCode 1 -VersionName 0.1" }

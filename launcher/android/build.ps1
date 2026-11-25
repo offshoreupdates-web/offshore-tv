@@ -24,7 +24,13 @@ $env:PATH = (Join-Path $env:JAVA_HOME "bin") + $sep + $env:PATH
 $bt = (Get-ChildItem (Join-Path "$tools" "android-sdk/build-tools") -Directory | Select-Object -First 1).FullName
 $androidJar = Join-Path (Get-ChildItem (Join-Path "$tools" "android-sdk/platforms") -Directory | Select-Object -First 1).FullName "android.jar"
 $aapt2 = Join-Path $bt "aapt2$exe"; $zipalign = Join-Path $bt "zipalign$exe"
-$d8jar = Join-Path $bt "lib/d8.jar"; $signer = Join-Path $bt "lib/apksigner.jar"
+$signer = Join-Path $bt "lib/apksigner.jar"
+# R8 and the desugared Java library come from Google's Maven repository (setup_toolchain.ps1, step 4): the build-tools
+# copy of R8 is too old for NewPipe Extractor's Java 17 code.
+$desugar = Join-Path "$tools" "desugar"
+$r8jar = Join-Path $desugar "r8-9.5.33.jar"
+$dlib = Join-Path $desugar "desugar_jdk_libs_nio-2.1.5.jar"; $dconf = Join-Path $desugar "desugar_jdk_libs_configuration_nio-2.1.5.jar"
+if (-not (Test-Path $r8jar) -or -not (Test-Path $dlib) -or -not (Test-Path $dconf)) { throw "R8 or desugaring missing in $desugar. Run tools/setup_toolchain.ps1 again." }
 $web = Join-Path "$root" "launcher/web"
 $res = Join-Path $here "res"; $manifest = Join-Path $here "AndroidManifest.xml"; $pg = Join-Path $here "proguard.pro"
 # Build outside OneDrive (and off the thumb drive): OneDrive locks freshly written files while syncing, which breaks
@@ -32,6 +38,7 @@ $res = Join-Path $here "res"; $manifest = Join-Path $here "AndroidManifest.xml";
 $out = if ($onWin) { Join-Path "$env:LOCALAPPDATA" "offshore-build" }
        else { Join-Path $(if ($env:XDG_CACHE_HOME) { $env:XDG_CACHE_HOME } else { Join-Path $HOME ".cache" }) "offshore-build" }
 $gen = Join-Path $out "gen"; $classesDir = Join-Path $out "classes"; $dexDir = Join-Path $out "dex"; $assets = Join-Path $out "assets"
+$libDexDir = Join-Path $out "libdex"
 $outLibs = Join-Path $out "libs"; $unsigned = Join-Path $out "unsigned.apk"; $aligned = Join-Path $out "aligned.apk"
 $signed = Join-Path $out "offshore.apk"
 
@@ -42,7 +49,7 @@ function Run($exe, [string[]]$argv) {
 
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 if (Test-Path "$out") { Remove-Item -Recurse -Force "$out" }
-New-Item -ItemType Directory -Force $gen, $classesDir, $dexDir, $assets | Out-Null
+New-Item -ItemType Directory -Force $gen, $classesDir, $dexDir, $libDexDir, $assets | Out-Null
 
 # Web assets: the page is joined from its parts (launcher\web\src) first; the parts themselves aren't shipped.
 $assemble = Join-Path "$root" "tools/assemble_web.ps1"
@@ -57,9 +64,10 @@ Run $aapt2 @("link", "-o", $unsigned, "-I", "$androidJar", "--manifest", $manife
     "--version-code", "$VersionCode", "--version-name", "$VersionName", (Join-Path $out "res.zip"))
 
 Write-Host "[2/6] compile java"
-# Libraries (from Maven Central, checked against its SHA-1s; see tools\libs\README.txt): SMB (smbj), NFS
-# (nfs-client) and encryption (Bouncy Castle) for network folders and LocalSend. Copied without META-INF (multi-release
-# duplicates, signatures), which R8 can't take.
+# Libraries (checked by setup_toolchain.ps1; see tools\libs\README.txt): SMB (smbj), NFS (nfs-client) and encryption
+# (Bouncy Castle) for network folders and LocalSend, NewPipe Extractor and what it uses for YouTube backgrounds. Copied
+# without META-INF (multi-release duplicates, signatures), which R8 can't take. Rhino's message texts, the only
+# resources any of them read, go into the APK as they are.
 $libs = Join-Path "$tools" "libs"
 New-Item -ItemType Directory -Force $outLibs | Out-Null
 $libJars = @(Get-ChildItem (Join-Path $libs "*.jar") | Sort-Object Name | ForEach-Object {
@@ -73,18 +81,41 @@ $libJars = @(Get-ChildItem (Join-Path $libs "*.jar") | Sort-Object Name | ForEac
     $new.Dispose(); $src.Dispose()
     $dst
 })
+$javaRes = @{}
+foreach ($j in (Get-ChildItem (Join-Path $libs "rhino-*.jar"))) {
+    $z = [IO.Compression.ZipFile]::OpenRead($j.FullName)
+    foreach ($e in $z.Entries) {
+        if ($e.FullName -like "org/mozilla/javascript/resources/*.properties") {
+            $m = New-Object IO.MemoryStream; $i = $e.Open(); $i.CopyTo($m); $i.Dispose(); $javaRes[$e.FullName] = $m.ToArray()
+        }
+    }
+    $z.Dispose()
+}
 $sources = @(Get-ChildItem -Recurse (Join-Path $here "src"), $gen -Filter *.java | ForEach-Object { $_.FullName })
 Run "javac" (@("-nowarn", "-source", "8", "-target", "8", "-bootclasspath", "$androidJar", "-cp", ($libJars -join $sep), "-d", $classesDir, "-encoding", "UTF-8") + $sources)
 
-Write-Host "[3/6] dex (R8: keeps only the library code the app uses, see proguard.pro)"
+Write-Host "[3/6] dex (R8: keeps only the library code the app uses, see proguard.pro; L8: the Java library parts Fire OS lacks)"
 $classes = @(Get-ChildItem -Recurse $classesDir -Filter *.class | ForEach-Object { $_.FullName })
-Run "java" (@("-cp", $d8jar, "com.android.tools.r8.R8", "--release", "--min-api", "22", "--lib", "$androidJar", "--pg-conf", $pg,
-    "--output", $dexDir) + $classes + $libJars)
+$dz = [IO.Compression.ZipFile]::OpenRead($dconf)
+$djson = Join-Path $out "desugar.json"
+$de = $dz.GetEntry("META-INF/desugar/d8/desugar.json"); $ds = $de.Open(); $fs = [IO.File]::Create($djson); $ds.CopyTo($fs); $fs.Dispose(); $ds.Dispose(); $dz.Dispose()
+# The class list goes in an argument file: with the libraries it's longer than Windows allows on a command line.
+$argFile = Join-Path $out "r8-inputs.txt"
+[IO.File]::WriteAllLines($argFile, [string[]]($classes + $libJars))
+Run "java" @("-cp", $r8jar, "com.android.tools.r8.R8", "--release", "--min-api", "22", "--lib", "$androidJar", "--pg-conf", $pg,
+    "--desugared-lib", $djson, "--output", $dexDir, "@$argFile")
 if (-not (Test-Path (Join-Path $dexDir "classes.dex"))) { throw "r8 produced no classes.dex" }
+Run "java" @("-cp", $r8jar, "com.android.tools.r8.L8", "--release", "--min-api", "22", "--lib", "$androidJar",
+    "--desugared-lib", $djson, "--output", $libDexDir, $dlib, $dconf)
 
 Write-Host "[4/6] package"
 $zip = [IO.Compression.ZipFile]::Open($unsigned, "Update")
-[IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, (Join-Path $dexDir "classes.dex"), "classes.dex") | Out-Null
+# The app's dex files (classes.dex, classes2.dex, ...), then the desugared Java library as the next one.
+$dexFiles = @(Get-ChildItem $dexDir -Filter "classes*.dex" | Sort-Object { [int]("0" + ($_.BaseName -replace "\D", "")) })
+$n = 0
+foreach ($d in $dexFiles) { $n++; $name = if ($n -eq 1) { "classes.dex" } else { "classes$n.dex" }; [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $d.FullName, $name) | Out-Null }
+$n++; [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, (Join-Path $libDexDir "classes.dex"), "classes$n.dex") | Out-Null
+foreach ($k in ($javaRes.Keys | Sort-Object)) { $w = $zip.CreateEntry($k).Open(); $w.Write($javaRes[$k], 0, $javaRes[$k].Length); $w.Dispose() }
 # Assets are added here, not with aapt2 -A: on Windows aapt2 stores subfolders with backslashes
 # ("assets/img\plex.jpg"), so the page can't find img/plex.jpg. Sorted so every computer packs them in the same order.
 $assetsFull = (Get-Item $assets).FullName.TrimEnd('\', '/')

@@ -193,14 +193,50 @@ final class Home {
 
     // ---- Live background in 4K: Android's own player on a layer behind the (then transparent) page. The page itself is
     // drawn at 1920x1080 on Fire TV, so a video inside it can't be sharper than that; a SurfaceView behind it goes to the
-    // TV's video plane at the clip's own resolution. Muted, never takes audio focus (music in another app keeps playing),
+    // TV's video plane at the clip's own resolution. Muted unless the page sets a volume, never takes audio focus (music in another app keeps playing),
     // only in MainActivity's window. Tells the page guestNativeVid(event, width, height).
     // Drawn through a TextureView (the normal graphics path), not a SurfaceView: on this TV the SurfaceView's hardware
     // video plane showed the clips upside down. The frames' own transform is applied by SurfaceTexture, and the picture
     // is scaled to cover the screen. MediaPlayer itself never takes audio focus, so music in other apps keeps playing.
     private android.view.TextureView tex;
     private android.media.MediaPlayer player;
+    /** A 4K YouTube clip's sound, kept beside it as "<name>.m4a" (Android 9 can't store it inside the WebM). */
+    private android.media.MediaPlayer sidePlayer;
     private String vidUrl;
+    /** The page's volume for a clip saved with its sound (0 to 0.6). Silent while the home screen isn't in front. */
+    private float vidVol;
+
+    void applyVideoVolume() {
+        float v = visible ? vidVol : 0f;
+        if (player != null) try { player.setVolume(v, v); } catch (IllegalStateException ignored) { }
+        if (sidePlayer != null) try { sidePlayer.setVolume(v, v); } catch (IllegalStateException ignored) { }
+    }
+
+    /** Starts the sound file beside a kept clip, if it has one (only this app's own files reach here). */
+    private void startSideSound(String url) {
+        Uri u = Uri.parse(url);
+        if (!"file".equals(u.getScheme()) || u.getPath() == null || !u.getPath().endsWith(".webm")) return;
+        java.io.File f = new java.io.File(u.getPath().replaceAll("\\.webm$", ".m4a"));
+        if (!f.isFile()) return;
+        try {
+            android.media.MediaPlayer sp = new android.media.MediaPlayer();
+            sidePlayer = sp;
+            sp.setDataSource(f.getAbsolutePath());
+            float v = visible ? vidVol : 0f;
+            sp.setVolume(v, v);
+            sp.setLooping(true);
+            sp.prepare();                                                  // a small local file
+            sp.start();
+        } catch (Exception e) {
+            Log.w(TAG, "live background: sound file: " + e);
+            releaseSide();
+        }
+    }
+    private void releaseSide() {
+        if (sidePlayer == null) return;
+        try { sidePlayer.release(); } catch (Exception ignored) { }
+        sidePlayer = null;
+    }
 
     private void nativeVideoPlay(final String url) {
         ViewParent p = web.getParent();
@@ -238,10 +274,11 @@ final class Home {
             // Wikimedia asks every app to say who it is (its User-Agent policy) and turns away requests that don't;
             // Android's player on its own sends only a generic name, so the clips stopped loading on the TV.
             java.util.Map<String, String> h = new java.util.HashMap<>();
-            if (url.startsWith("https://")) h.put("User-Agent", "Offshore (TV home screen; https://offshoreupdates-web.github.io/offshore/)");
+            if (url.startsWith("https://")) h.put("User-Agent", "Offshore (TV home screen; https://github.com/offshoreupdates-web/offshore-tv)");
             mp.setDataSource(app, Uri.parse(url), h);
             mp.setSurface(new android.view.Surface(tex.getSurfaceTexture()));
-            mp.setVolume(0f, 0f);
+            float v = visible ? vidVol : 0f;
+            mp.setVolume(v, v);                                            // 0 unless the page turned the clip's sound on
             // Loops in the player itself: the clip starts over with no gap. (It used to stop at the end and the page
             // started it again, which rebuilt the player and fetched the clip again: a short clip blinked every few
             // seconds.) The page moves to the next clip on its own timer, or never when one clip was chosen.
@@ -250,6 +287,7 @@ final class Home {
                 @Override public void onPrepared(android.media.MediaPlayer m) {
                     if (m != player) return;
                     m.start();
+                    startSideSound(vidUrl == null ? "" : vidUrl);
                     js("window.guestNativeVid && guestNativeVid('playing'," + m.getVideoWidth() + "," + m.getVideoHeight() + ")");
                 }
             });
@@ -285,6 +323,7 @@ final class Home {
     }
 
     private void releasePlayer() {
+        releaseSide();
         if (player == null) return;
         try { player.release(); } catch (Exception ignored) { }
         player = null;
@@ -350,6 +389,7 @@ final class Home {
     /** The home screen is on screen again: start its idle clock (ambient mode) from zero. */
     void shown() {
         visible = true;
+        applyVideoVolume();
         thaw();                                     // timers first, so guestShown's catch-up can run
         if (pageReady) web.evaluateJavascript("window.guestShown && guestShown()", null);
         if (cm != null) postNet();                  // Wi-Fi bars aren't polled while hidden
@@ -1383,6 +1423,7 @@ final class Home {
     /** An app now covers the home screen: the page may re-order its tiles without anyone seeing it move. */
     void hidden() {
         visible = false;
+        applyVideoVolume();
         main.removeCallbacks(freeze); main.removeCallbacks(alertsTick);
         main.postDelayed(freeze, 8000);           // after the page's own tidy-up (tile order, a reload) has run
         if (reloadIfConfigChanged()) return;
@@ -1766,7 +1807,10 @@ final class Home {
                     "feeds.arstechnica.com", "www.theverge.com", "www.wired.com",               // technology
                     "www.nasa.gov",                                                              // space and science
                     "transition.fcc.gov");                  // Live TV's Local group: the FCC's list of TV stations near this TV
-            if (!"https".equals(Uri.parse(url).getScheme()) || !allowed.contains(host)) { answer(id, null); return; }
+            // NASA's video file lists only (a live background's MP4 copies): images-assets.nasa.gov/video/<id>/collection.json
+            String path = Uri.parse(url).getPath() == null ? "" : Uri.parse(url).getPath();
+            boolean nasaList = "images-assets.nasa.gov".equals(host) && path.matches("/video/[^/]+/collection\\.json") && Uri.parse(url).getQuery() == null;
+            if (!"https".equals(Uri.parse(url).getScheme()) || !(allowed.contains(host) || nasaList)) { answer(id, null); return; }
             NET.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -1881,6 +1925,66 @@ final class Home {
                     }
                     js("window.guestVidSaved && guestVidSaved(" + org.json.JSONObject.quote(id) + "," + !out.isEmpty() + "," + org.json.JSONObject.quote(out) + ")");
                 }
+            });
+        }
+
+        /**
+         * YouTube search for live backgrounds (see YouTube.java): answers guestFetched(id, ok, json) with up to 20
+         * videos, [{id, t, a, d, th}]. A link or a bare video id finds just that video. A query starting "cc:" finds
+         * Creative Commons videos only (the "Near you" set).
+         */
+        @JavascriptInterface
+        public void youtubeSearch(final String id, final String query) {
+            if (query == null || query.trim().isEmpty() || query.length() > 200) { answer(id, null); return; }
+            final boolean cc = query.startsWith("cc:");
+            NET.execute(new Runnable() {
+                @Override public void run() {
+                    try { answer(id, YouTube.search(cc ? query.substring(3) : query, cc)); }
+                    catch (Throwable e) { Log.w(TAG, "YouTube search failed: " + e); answer(id, null); }
+                }
+            });
+        }
+
+        /**
+         * Saves YouTube video `video` as a silent clip in files/bg/<dir>/<name>.mp4 or .webm: 1080p, or 4K when
+         * `quality` starts "4k" and the TV is sending 4K. `quality` may add ",cc" (the video must still be Creative
+         * Commons) and ",<seconds>" (a shorter clip). One at a time on the background saver. Answers
+         * guestVidSaved(id, ok, url-or-reason).
+         */
+        @JavascriptInterface
+        public void youtubeSave(final String id, final String video, final String quality, final String dir, final String name) {
+            // quality: "1080" or "4k", then optional ",cc" (Creative Commons only), ",<seconds>", ",s<start seconds>", ",snd"
+            final java.util.regex.Matcher q = quality == null ? null
+                    : java.util.regex.Pattern.compile("(1080|4k)(,cc)?(?:,(\\d{2,4}))?(?:,s(\\d{1,3}))?(,snd)?").matcher(quality);
+            if (YouTube.videoId(video).isEmpty() || q == null || !q.matches()
+                    || !dir.matches("[a-z0-9_-]{1,40}") || !name.matches("[a-z0-9_-]{1,40}")) return;
+            final boolean four = "4k".equals(q.group(1)) && tvIs4k(), cc = q.group(2) != null, sound = q.group(5) != null;
+            final int seconds = q.group(3) != null ? Integer.parseInt(q.group(3)) : 0;
+            final int start = q.group(4) != null ? Integer.parseInt(q.group(4)) : 0;
+            BG_SAVER.execute(new Runnable() {
+                @Override public void run() {
+                    String out, why = "";
+                    boolean snd = false;
+                    try {
+                        java.io.File f = YouTube.save(video, four, new java.io.File(new java.io.File(ctx.getFilesDir(), "bg/" + dir), name), seconds, start, sound, cc);
+                        out = Uri.fromFile(f).toString();
+                        snd = YouTube.lastHadSound;
+                    } catch (Throwable e) {
+                        Log.w(TAG, "YouTube background " + video + " failed: " + e);
+                        out = "";
+                        why = e instanceof java.io.IOException && e.getMessage() != null && e.getMessage().length() < 80 ? e.getMessage() : "YouTube didn't send this video";
+                    }
+                    js("window.guestVidSaved && guestVidSaved(" + org.json.JSONObject.quote(id) + "," + !out.isEmpty() + "," + org.json.JSONObject.quote(out.isEmpty() ? why : out) + "," + snd + ")");
+                }
+            });
+        }
+
+        /** Volume for the live background's own sound, 0 (the default: muted) to 0.6. Only clips saved with sound have any. */
+        @JavascriptInterface
+        public void nativeVideoVolume(final float v) {
+            final float vol = Float.isNaN(v) ? 0f : Math.max(0f, Math.min(0.6f, v));
+            main.post(new Runnable() {
+                @Override public void run() { vidVol = vol; applyVideoVolume(); }
             });
         }
 

@@ -139,15 +139,17 @@
                    outdoors: "Beach and water conditions, walk-or-run weather and the week", family: "Your calendar, the week and a greeting" };
   // "Pick a background": photos or a live video, shown for real behind the panel as the focus moves. Videos stream
   // (no storage); the first look at a topic finds its clips, which takes a moment.
-  var SU_BGS = [["time", "Beach photos", "Photos that follow the time of day"], ["vid:waves", "Beach waves", "Live video, streamed"],
-                ["vid:tropical", "Tropical shores", "Live video, streamed"], ["vid:niagara", "Niagara Falls", "Live video, streamed"],
-                ["vid:fire", "Cozy fireplace", "Live video, streamed"], ["vid:rain", "Rain on the window", "Live video, streamed"],
+  var SU_BGS = [["time", "Beach photos", "Photos that follow the time of day"], ["vid:waves", "Beach waves", "Live video in 1080p"],
+                ["vid:tropical", "Tropical islands", "Live video, filmed from above"], ["vid:fire", "Cozy fireplace", "Live video in 1080p"],
+                ["vid:weather", "Today's weather", "Rain, snow, storms or sun, as the forecast changes"],
                 ["vid:seasonal", "Holidays & seasons", "Changes by itself for each US holiday and season"]];
   function suTryBg(v) {
     if (PREFS.bg === v) return;
     PREFS.bg = v;
     var vc = v.indexOf("vid:") === 0 ? vidCatOf(liveTopic(v)) : null;
-    if (vc && !vidList(vc.id) && !vidJobs[vc.id]) downloadVid(vc);    // plays by itself once the clips are found
+    // Only the streamed clips while people look around (no downloads for every card passed); the set's YouTube clips
+    // follow once setup is done, if it's the one chosen (liveSync).
+    if (vc && !vidList(vc.id) && !vidJobs[vc.id]) downloadVid(vc, true);   // plays by itself once the clips are found
     applyPrefs("bg");
   }
   // "Make it yours": the features people should know about, each opening its real Settings page (Back returns here).
@@ -155,7 +157,7 @@
     ["g:sport", "Favorite teams", "Scores and schedules for any sport or league", "sport"],
     ["ssNewsPick", "Your news", "Local, world, tech and more, from sources you pick", "notif"],
     ["ssStocks", "Stocks & crypto", "The prices your screensaver keeps an eye on", "tasks"],
-    ["bg", "Backgrounds", "Photos or live video: beaches, reefs, fireplace, holidays", "look"],
+    ["bg", "Backgrounds", "Photos or live video: beaches, wildlife, weather, cities, holidays", "look"],
     ["homeLayout", "Home layout", "Ready-made home screens, tried live, always tidy", "info"],
     ["g:look", "Fonts & colors", "Lettering, accent color, tinted glass, light or dark", "tv"],
     ["sleep", "Sleep sounds", "Rain, ocean or fan, with a timer and a dim screen", "saver"],
@@ -245,9 +247,9 @@
     return "<h1>Unlock the extras</h1><p><b>Optional.</b> Offshore works fine without these. Fire TV only lets a computer switch them on, " +
       "so this is a one-time job for whoever is comfortable with one. You can do it any time.</p>" + list +
       '<div class="su-how"><div><em>1</em><span>On this TV: Fire TV <b>Settings › My Fire TV › Developer options › ADB debugging</b>: On.</span></div>' +
-      "<div><em>2</em><span>On a computer on the same Wi-Fi: run <b>setup_tv.ps1</b> from Offshore's download with this TV's address" +
-      (ip ? ": <b>" + esc(ip) + "</b>" : "") + ". The ticks above turn green by themselves.</span></div></div>" +
-      '<p class="su-note">The same step can switch off Amazon extras you don\'t use (shopping, promotions, tracking): choose them first with <b>Tidy up Fire TV</b>.</p>';
+      "<div><em>2</em><span>On a computer on the same Wi-Fi, in Offshore's download folder, run:<br><code>" + esc(setupCmd(ip)) + "</code><br>" +
+      "<small>Mac or Linux: <code>" + esc(setupCmd(ip, true)) + "</code></small></span></div></div>" +
+      '<p class="su-note">The ticks turn green by themselves. The same step can switch off Amazon extras you don\'t use: pick them first with <b>Tidy up Fire TV</b>.</p>';
   }
   // The Home button not connected yet (tools\setup_tv.ps1 never run on this TV): Home goes to Amazon's screen and
   // nothing on the TV says why. A quiet notice explains the one-time fix, at most once a week and three times in all
@@ -262,7 +264,7 @@
     guestNotice({ title: "The Home button isn't connected yet", message: "Home opens Amazon's screen for now. Open to see the one-time fix.",
       details: ["Fire TV only lets a computer switch the Home button on, and only once.",
                 "On this TV: Fire TV Settings › My Fire TV › Developer options › ADB debugging: On.",
-                "On a computer on the same Wi-Fi: run setup_tv.ps1 from Offshore's download with this TV's address.",
+                "On a computer on the same Wi-Fi, in the folder of Offshore's download: " + setupCmd(suIp()),
                 "After that, Home always brings you back to Offshore, even after updates."],
       level: "info", source: "Setup", action: "perms", quiet: true });
   }
@@ -447,6 +449,7 @@
     save("prefs", PREFS); custDirty = false;
     try { localStorage.setItem("setupDone", JSON.stringify(Date.now())); } catch (e) {}
     SU.open = false;
+    liveSync();                                         // a live set chosen in setup now gets its YouTube clips too
     var el = document.getElementById("setup"), card = document.getElementById("suCard");
     card.classList.remove("in"); card.classList.add("out");
     setTimeout(function () { el.classList.remove("open", "touring"); card.innerHTML = ""; card.classList.remove("out"); }, 300);

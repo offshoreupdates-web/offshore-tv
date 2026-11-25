@@ -93,6 +93,7 @@
     var well = function (k) { return '<i class="well">' + DICON[k] + "</i>"; };
     var onAir = !playing && typeof RD !== "undefined" && RD.now;   // Offshore's own Radio, when no music app is playing
     document.getElementById("dock").classList.toggle("playing", !!(playing || onAir));
+    if (typeof liveVolSync === "function") liveVolSync();         // a live video's sound goes quiet under music
     if (onAir) {
       dchip("dMusic", "green playnow", '<i class="well">' + DICON.music + '</i><span class="dm"><b></b><em></em></span>');
       document.querySelector("#dMusic b").textContent = RD.now.n;

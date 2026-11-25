@@ -153,6 +153,7 @@
       src.start(); SLEEP.ctx = ctx; SLEEP.gain = out;
     }
     SLEEP.on = true;
+    if (typeof liveVolSync === "function") liveVolSync();
     var mins = +PREFS.sleepTimer || 0;
     SLEEP.until = mins ? Date.now() + mins * 60000 : 0;
     if (mins) SLEEP.timer = setTimeout(function () { sleepStop(false); }, mins * 60000);
@@ -165,7 +166,7 @@
                setTimeout(function () { try { ctx.close(); } catch (e) { } }, secs * 1000 + 200); }
     if (a) { var v0 = a.volume, steps = Math.max(1, secs * 10), k = 0;
              var f = setInterval(function () { k++; a.volume = Math.max(0, v0 * (1 - k / steps)); if (k >= steps) { clearInterval(f); a.pause(); a.src = ""; } }, 100); }
-    SLEEP.ctx = SLEEP.gain = SLEEP.audio = null; SLEEP.on = false; SLEEP.until = 0;
+    SLEEP.ctx = SLEEP.gain = SLEEP.audio = null; SLEEP.on = false; SLEEP.until = 0; if (typeof liveVolSync === "function") liveVolSync();
     sleepScreen();
   }
   function sleepVolume() {

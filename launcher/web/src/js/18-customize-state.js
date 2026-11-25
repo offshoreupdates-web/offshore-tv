@@ -4,7 +4,7 @@
   var custOpen = false, custRow = 0, custMode = "main", custSnapshot = null, custDirty = false, padIdx = 0, padZip = "", kbIdx = 0, kbText = "";
   var CUST_TITLE = { plex: "Plex", cards: "Your cards", cardedit: "Card", main: "Settings", livetv: "Live TV", livedel: "Remove a playlist", livehidden: "Hidden in Live TV", livephone: "Add your channels from your phone", tidy: "Tidy up Fire TV", updother: "Apps, Fire OS & Kodi updates", inbox: "Notifications", notice: "Notification", about: "About Offshore", whatsnew: "What's new", cal: "Calendar", calphone: "Add a calendar from your phone", calnew: "New event", perms: "Permissions & setup", sleep: "Sleep sounds", sleepres: "Free sounds to sleep to", ssNewsPick: "News topics & sources", tasks: "Task manager", ssItem: "Screensaver item", ssLayout: "Screensaver layout", ssStocks: "Stocks", ssCrypto: "Crypto", leagues: "Leagues", teams: "Favorite teams", location: "Location", zip: "Enter ZIP code",
                      confirm: "Save your changes?", bg: "Backgrounds", search: "Search for photos", bgdelete: "Delete downloaded photos",
-                     nas: "Network folder", bgphotos: "Photos", bglive: "Live video", room: "Room", storage: "Storage & downloads", speed: "Speed test", viddelete: "Forget live videos", pinset: "Choose a 4-digit PIN",
+                     nas: "Network folder", bgphotos: "Photos", bglive: "Live video", ytres: "YouTube", ytadd: "Add this video", room: "Room", storage: "Storage & downloads", speed: "Speed test", viddelete: "Forget live videos", pinset: "Choose a 4-digit PIN",
                      pinask: "Enter the settings PIN", bt: "Bluetooth", wifi: "Wi-Fi", hidden: "Hidden tiles", uninstall: "Uninstall apps", sndres: "Free sounds",
                      sndslots: "Your sounds" };
   var CUST_FOOT = { plex: "▲ ▼ choose · OK · Back", cards: "▲ ▼ choose · OK opens · Back", cardedit: "▲ ▼ choose · ◀ ▶ change · OK select · Back leaves it as it was", main: "▲ ▼ choose · ◀ ▶ change · Save settings keeps your changes", livetv: "▲ ▼ choose · OK · Back", livedel: "▲ ▼ choose · OK removes · Back", livehidden: "▲ ▼ choose · OK shows it again · Back", livephone: "Back closes the phone link", tidy: "▲ ▼ choose · OK switches it · Back", updother: "▲ ▼ choose · OK opens · ◀ ▶ change · Back", leagues: "▲ ▼ choose · OK turns on or off · Back",
@@ -15,6 +15,8 @@
                     zip: "Arrows choose · OK presses · Back", confirm: "▲ ▼ choose · OK select",
                     bg: "▲ ▼ choose · OK opens · Back", bgphotos: "▲ ▼ shows each set behind this list · OK opens a set: take turns, or one photo · Back",
                     bglive: "▲ ▼ plays each one behind this list · OK opens a set: all its clips, or one · Back",
+                    ytres: "OK makes a set, or opens one video to add it · Back",
+                    ytadd: "▲ ▼ choose · ◀ ▶ change · OK on Save keeps it on the TV · Back",
                     bgclips: "▲ ▼ plays each one behind this list · OK uses it · Back",
                     bgpics: "▲ ▼ shows each one behind this list · OK uses it · Back",
                     search: "Arrows choose · OK types · ✓ done · Back", bgdelete: "▲ ▼ choose · OK deletes · Back",
