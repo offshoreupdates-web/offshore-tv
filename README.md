@@ -18,8 +18,8 @@ The Amazon home screen stays installed underneath. Turn Offshore off and the TV 
 |---|---|
 | ![Keep watching row over the Plex tile](docs/screenshots/keep-watching.jpg) | ![Screensaver with clock, forecast, markets and a weather warning](docs/screenshots/screensaver.jpg) |
 | **Keep watching** shows what you were watching in the app you're on. | **The screensaver** is a smart mirror you lay out yourself. |
-| ![Settings list](docs/screenshots/settings.jpg) | ![Backgrounds settings](docs/screenshots/backgrounds.jpg) |
-| **Settings** explain every option on screen. | **Backgrounds** from five free, credited sources. |
+| ![Settings list](docs/screenshots/settings.jpg) | ![Live video: the Underwater & sea life sets, with a coral reef video playing behind the list](docs/screenshots/backgrounds.jpg) |
+| **Settings** explain every option on screen. | **Live video**: 66 sets of free, credited videos, or any YouTube video. |
 | ![Welcome screen](docs/screenshots/welcome.jpg) | ![Notifications & System panel](docs/screenshots/system.jpg) |
 | **Setup** takes about two minutes and can be skipped. | **Notifications & System** for the TV's details. |
 
