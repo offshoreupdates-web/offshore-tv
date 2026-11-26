@@ -13,6 +13,7 @@
   // What's new: the notes for recent versions, newest first. Shown once after an update (a quiet notice with the
   // highlights) and in full under Settings > Updates & about > What's new. Written for the person on the couch.
   var CHANGELOG = [
+    ["0.19.1", "November 2026", ["Fixes 0.19 stopping at start-up (a photo and nothing else on screen) when the background photo came from NASA, The Met, the Art Institute of Chicago or the Library of Congress"]],
     ["0.19", "November 2026", ["Backgrounds from NASA, The Met, the Art Institute of Chicago and the Library of Congress, alongside Wikimedia Commons",
                               "Search for photos across all five sources, and search for live videos on Wikimedia Commons and NASA",
                               "Live backgrounds play again",

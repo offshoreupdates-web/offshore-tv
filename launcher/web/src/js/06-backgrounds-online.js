@@ -52,7 +52,7 @@
       "Estadi Olímpic Lluís Companys - Barcelona, Spain - Jan 2007.jpg", "RUS-2016-Aerial-SPB-Krestovsky Stadium 01.jpg", "Yokohama Stadium.jpg",
       "Petrovskiy football stadium in SPB.jpg", "Varsity Stadium, Toronto.jpg"] },
     { id: "skiing", name: "Ski slopes", group: "Sports", q: "ski slope mountains" },
-    // From the other free sources (see SOURCES below): NASA's own pictures, two museums' public-domain paintings, and
+    // From the other free sources (see srcName below): NASA's own pictures, two museums' public-domain paintings, and
     // the Library of Congress's Photochrom prints (colour travel views from around 1900).
     { id: "nasa-earth", name: "Earth from the space station", group: "Sky & space", src: "nasa", q: "earth observation from the international space station" },
     { id: "nasa-deep", name: "Nebulae and galaxies (Hubble & Webb)", group: "Sky & space", src: "nasa", q: "hubble nebula" },
@@ -174,7 +174,7 @@
         });
       });
       if (custOpen) renderCustom();
-    }).catch(function () { delete bgJobs[cat.id]; toast("Couldn't reach " + (cat.src && SOURCES[cat.src] || (cat.src === "all" ? "the photo sources" : "Wikimedia Commons"))); if (custOpen) renderCustom(); });
+    }).catch(function () { delete bgJobs[cat.id]; toast("Couldn't reach " + (cat.src && cat.src !== "all" ? srcName({ s: cat.src }) : (cat.src === "all" ? "the photo sources" : "Wikimedia Commons"))); if (custOpen) renderCustom(); });
   }
   function deleteCat(id) {
     if (app && app.deleteBg) app.deleteBg("c-" + id);
@@ -190,8 +190,13 @@
   //   aic   Art Institute of Chicago: public-domain works only, pictures from its own IIIF image server
   //   loc   Library of Congress, Photochrom prints (c. 1890-1910 colour travel views, "no known restrictions")
   // Each gives the same [{url, t, a, l, s}] as commonsPhotos; landscape pictures only, checked on a small copy first.
-  var SOURCES = { commons: "Wikimedia Commons", nasa: "NASA", met: "The Met", aic: "Art Institute of Chicago", loc: "Library of Congress", yt: "YouTube" };
-  function srcName(x) { return SOURCES[(x && x.s) || "commons"] || ""; }
+  // srcName runs while the page starts (05-photos credits the first photo before this part has run), so it keeps its
+  // own list instead of reading a variable that isn't set yet. 0.19 read SOURCES here and stopped at start-up whenever
+  // the photo on screen came from NASA, The Met, the Art Institute or the Library of Congress.
+  function srcName(x) {
+    var names = { commons: "Wikimedia Commons", nasa: "NASA", met: "The Met", aic: "Art Institute of Chicago", loc: "Library of Congress", yt: "YouTube" };
+    return names[(x && x.s) || "commons"] || "";
+  }
   function wideEnough(url) {                             // a small copy's shape: landscape (1.3 to 2.1 wide), or not
     return new Promise(function (res) {
       var i = new Image(), done = false, end = function (v) { if (!done) { done = true; res(v); } };

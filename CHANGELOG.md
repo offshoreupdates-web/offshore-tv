@@ -2,6 +2,10 @@
 
 What changed in each version, newest first. The same notes appear in the app under Settings › Updates & about › What's new.
 
+## 0.19.1 · November 2026
+
+- Fixes 0.19 stopping at start-up (a photo and nothing else on screen) when the background photo came from NASA, The Met, the Art Institute of Chicago or the Library of Congress
+
 ## 0.19 · November 2026
 
 - Backgrounds from NASA, The Met, the Art Institute of Chicago and the Library of Congress, alongside Wikimedia Commons
